@@ -29,13 +29,12 @@ public class Address {
 
     private String country;
 
+    @Column(length = 8)
     private String cep;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-
-    private boolean active;
 
     @CreationTimestamp
     private Instant createdAt;
@@ -67,7 +66,6 @@ public class Address {
         this.state = state;
         this.country = country;
         this.cep = cep;
-        this.active = true;
     }
 
     //endregion
@@ -109,10 +107,6 @@ public class Address {
         return user;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -129,19 +123,14 @@ public class Address {
     //endregion
 
     //region DOMAIN METHODS
-    public boolean isSameAddress(Address otherAddress) {
-        return Objects.equals(this.streetName, otherAddress.getStreetName())
-                && Objects.equals(this.houseNumber, otherAddress.getHouseNumber())
-                && Objects.equals(this.neighborhood, otherAddress.getNeighborhood())
-                && Objects.equals(this.state, otherAddress.getState())
-                && Objects.equals(this.country, otherAddress.getCountry())
-                && Objects.equals(this.cep, otherAddress.getCep());
-    }
-
-    public void activate() {
-        if (!this.active) {
-            this.active = true;
-        }
+    boolean isSameAddress(String streetName, String houseNumber, String neighborhood, String state,
+                                 String country, String cep) {
+        return Objects.equals(this.streetName, streetName)
+                && Objects.equals(this.houseNumber, houseNumber)
+                && Objects.equals(this.neighborhood, neighborhood)
+                && Objects.equals(this.state, state)
+                && Objects.equals(this.country, country)
+                && Objects.equals(this.cep, cep);
     }
     //endregion
 
@@ -161,7 +150,8 @@ public class Address {
 
         Address address = (Address) o;
 
-        return isSameAddress(address);
+        return isSameAddress(address.getStreetName(), address.getHouseNumber(), address.getNeighborhood(),
+                address.getState(), address.getCountry(), address.getCep());
     }
 
     @Override

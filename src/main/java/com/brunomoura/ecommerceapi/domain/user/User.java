@@ -1,7 +1,9 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
 import com.brunomoura.ecommerceapi.enums.UserRole;
+import com.brunomoura.ecommerceapi.exception.AddressNotFoundException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidUserException;
+import com.brunomoura.ecommerceapi.exception.user.MissingRequiredAddressException;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -21,7 +23,7 @@ public class User {
 
     private String name;
 
-    @Column(unique = true)
+    @Column(length = 11, unique = true)
     private String cpf;
 
     @Column(unique = true)
@@ -57,18 +59,18 @@ public class User {
     //endregion
 
     //region CONSTRUCTORS
-    public User() {
+    protected User() {
     }
 
     public User(String name, String cpf, String email, String phoneNumber, LocalDate dateOfBirth,
                 String passwordHash) {
 
-        validateField("name", name);
-        validateField("cpf", cpf);
-        validateField("email", email);
-        validateField("phoneNumber", phoneNumber);
-        validateField("dateOfBirth", dateOfBirth);
-        validateField("passwordHash", passwordHash);
+        validateStringField("name", name);
+        validateStringField("cpf", cpf);
+        validateStringField("email", email);
+        validateStringField("phoneNumber", phoneNumber);
+        validateDateOfBirth(dateOfBirth);
+        validateStringField("passwordHash", passwordHash);
 
         this.name = name;
         this.cpf = cpf;
@@ -131,52 +133,80 @@ public class User {
     public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
                            String country, String cep) {
 
-        Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
+        Optional<Address> existingAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
 
-        Optional<Address> existingAddress = findSameAddress(newAddress);
-
-        existingAddress.ifPresentOrElse(Address::activate, () -> addAddressInternal(newAddress));
+        if (existingAddress.isEmpty()) {
+            addAddressInternal(label, streetName, houseNumber, neighborhood, state, country, cep);
+        }
     }
 
+    public void removeAddress(Long id) {
+        Address foundAddress = findAddress(id);
+
+        if (this.addresses.size() < 2) {
+            throw new MissingRequiredAddressException("Addresses must contain one address at least.");
+        }
+
+        this.addresses.remove(foundAddress);
+    }
     //endregion
 
     //region INTERNAL METHODS
-    private Optional<Address> findSameAddress(Address newAddress) {
-        return this.addresses.stream().filter(address -> address.isSameAddress(newAddress)).findFirst();
+    private Optional<Address> findSameAddress(String streetName, String houseNumber, String neighborhood, String state,
+                                              String country, String cep) {
+        return this.addresses.stream().filter(address -> address.isSameAddress(
+                streetName, houseNumber, neighborhood, state, country, cep)).findFirst();
     }
 
-    private void addAddressInternal(Address newAddress) {
+    private Address findAddress(Long id) {
+        Optional<Address> findAddress = this.addresses.stream().filter(address -> address.getId().equals(id))
+                .findFirst();
+
+        if (findAddress.isEmpty()) {
+            throw new AddressNotFoundException("Address not found.");
+        }
+
+        return findAddress.get();
+    }
+
+    private void addAddressInternal(String label, String streetName, String houseNumber, String neighborhood, String state,
+                                    String country, String cep) {
+        Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
         newAddress.setUser(this);
         this.addresses.add(newAddress);
     }
 
-    private <T> void validateField(String field, T value) {
-        LocalDate maxBirthDate = LocalDate.now().minusYears(125);
-        LocalDate minBirthDate = LocalDate.now().minusYears(18);
-
+    private void validateStringField(String field, String value) {
         if (value == null) {
             throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
         }
 
-        if (value instanceof String stringValue) {
-            if (stringValue.isBlank()) {
-                throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
-            }
+        if (value.isBlank()) {
+            throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
+        }
+    }
+
+    private void validateDateOfBirth(LocalDate dateValue) {
+        if (dateValue == null) {
+            throw new InvalidUserException("Invalid user. Field: dateOfBirth cannot be null or blank.");
         }
 
-        if (value instanceof LocalDate dateValue) {
+        LocalDate currentDate = LocalDate.now();
+        LocalDate maxBirthDate = LocalDate.now().minusYears(125);
+        LocalDate minBirthDate = LocalDate.now().minusYears(18);
 
-            if (dateValue.isAfter(LocalDate.now())) {
-                throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be in the future.", field));
-            }
-            if (dateValue.isBefore(maxBirthDate)) {
-                throw new InvalidUserException(String.format(
-                        "Invalid user. Field: %s violates the maximum age constraint (125 years).", field));
-            }
-            if (dateValue.isAfter(minBirthDate)) {
-                throw new InvalidUserException(String.format(
-                        "Invalid user. Field: %s violates the minimum age constraint (18 years).", field));
-            }
+        if (dateValue.isAfter(currentDate)) {
+            throw new InvalidUserException("Invalid user. Field: dateOfBirth cannot be in the future.");
+        }
+
+        if (dateValue.isBefore(maxBirthDate)) {
+            throw new InvalidUserException(
+                    "Invalid user. Field: dateOfBirth violates the maximum age constraint (125 years).");
+        }
+
+        if (dateValue.isAfter(minBirthDate)) {
+            throw new InvalidUserException(
+                    "Invalid user. Field: dateOfBirth violates the minimum age constraint (18 years).");
         }
     }
     //endregion
