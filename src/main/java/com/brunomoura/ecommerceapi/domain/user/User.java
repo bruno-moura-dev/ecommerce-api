@@ -1,7 +1,8 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
 import com.brunomoura.ecommerceapi.enums.UserRole;
-import com.brunomoura.ecommerceapi.exception.AddressNotFoundException;
+import com.brunomoura.ecommerceapi.exception.user.AddressAlreadyExistsException;
+import com.brunomoura.ecommerceapi.exception.user.AddressNotFoundException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidUserException;
 import com.brunomoura.ecommerceapi.exception.user.MissingRequiredAddressException;
 import jakarta.persistence.*;
@@ -133,11 +134,13 @@ public class User {
     public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
                            String country, String cep) {
 
-        Optional<Address> existingAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
+        Optional<Address> foundAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
 
-        if (existingAddress.isEmpty()) {
-            addAddressInternal(label, streetName, houseNumber, neighborhood, state, country, cep);
+        if (foundAddress.isPresent()) {
+            throw new AddressAlreadyExistsException("Address already exists.");
         }
+
+        addAddressInternal(label, streetName, houseNumber, neighborhood, state, country, cep);
     }
 
     public void removeAddress(Long id) {
@@ -148,6 +151,23 @@ public class User {
         }
 
         this.addresses.remove(foundAddress);
+    }
+
+    public void updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood,
+                              String state, String country, String cep) {
+        Optional<Address> foundAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
+
+        if (foundAddress.isPresent()) {
+
+            if (foundAddress.get().getId().equals(id)) {
+                return;
+            } else {
+                throw new AddressAlreadyExistsException("Address already exists.");
+            }
+        } else {
+            addAddress(label, streetName, houseNumber, neighborhood, state, country, cep);
+            removeAddress(id);
+        }
     }
     //endregion
 
@@ -192,8 +212,8 @@ public class User {
         }
 
         LocalDate currentDate = LocalDate.now();
-        LocalDate maxBirthDate = LocalDate.now().minusYears(125);
-        LocalDate minBirthDate = LocalDate.now().minusYears(18);
+        LocalDate maxBirthDate = currentDate.minusYears(125);
+        LocalDate minBirthDate = currentDate.minusYears(18);
 
         if (dateValue.isAfter(currentDate)) {
             throw new InvalidUserException("Invalid user. Field: dateOfBirth cannot be in the future.");

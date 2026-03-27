@@ -1,4 +1,4 @@
-package com.brunomoura.ecommerceapi.exception;
+package com.brunomoura.ecommerceapi.exception.user;
 
 public class AddressNotFoundException extends RuntimeException {
     public AddressNotFoundException(String message) {
