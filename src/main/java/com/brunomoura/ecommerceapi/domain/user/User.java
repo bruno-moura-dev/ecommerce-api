@@ -131,6 +131,8 @@ public class User {
     //endregion
 
     //region DOMAIN METHODS
+
+    // Ensures address uniqueness within the aggregate based on value equality.
     public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
                            String country, String cep) {
 
@@ -143,9 +145,11 @@ public class User {
         addAddressInternal(label, streetName, houseNumber, neighborhood, state, country, cep);
     }
 
+
     public void removeAddress(Long id) {
         Address foundAddress = findAddress(id);
 
+        // Prevents address must contain one address at least
         if (this.addresses.size() < 2) {
             throw new MissingRequiredAddressException("Addresses must contain one address at least.");
         }
@@ -153,6 +157,7 @@ public class User {
         this.addresses.remove(foundAddress);
     }
 
+    // Prevents duplicate addresses and ensures idempotent updates.
     public void updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood,
                               String state, String country, String cep) {
         Optional<Address> foundAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
@@ -160,11 +165,14 @@ public class User {
         if (foundAddress.isPresent()) {
 
             if (foundAddress.get().getId().equals(id)) {
+                // No-op: same address, no state change required
                 return;
             } else {
                 throw new AddressAlreadyExistsException("Address already exists.");
             }
         } else {
+            // Add first to ensure the user is never left without an address.
+            // This avoids violating the "at least one address" business rule.
             addAddress(label, streetName, houseNumber, neighborhood, state, country, cep);
             removeAddress(id);
         }
@@ -172,6 +180,9 @@ public class User {
     //endregion
 
     //region INTERNAL METHODS
+
+    // Searches for an address using value-based equality. (not by ID)
+    // Using to enforce uniqueness within the aggregate.
     private Optional<Address> findSameAddress(String streetName, String houseNumber, String neighborhood, String state,
                                               String country, String cep) {
         return this.addresses.stream().filter(address -> address.isSameAddress(

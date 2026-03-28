@@ -143,6 +143,8 @@ public class Address {
     //endregion
 
     //region INFRASTRUCTURE METHODS
+    // Equality is based on address fields (value-based), not on ID.
+    // This allows the Set to prevent duplicate addresses.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
