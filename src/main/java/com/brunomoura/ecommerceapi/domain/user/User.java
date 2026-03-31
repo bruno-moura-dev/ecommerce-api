@@ -22,6 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 100)
     private String name;
 
     @Column(length = 11, unique = true)
@@ -30,10 +31,12 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(length = 14)
     private String phoneNumber;
 
     private LocalDate dateOfBirth;
 
+    @Column(length = 128)
     private String passwordHash;
 
     @Enumerated(value = EnumType.STRING)

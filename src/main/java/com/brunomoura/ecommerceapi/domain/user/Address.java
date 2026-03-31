@@ -2,6 +2,7 @@ package com.brunomoura.ecommerceapi.domain.user;
 
 import com.brunomoura.ecommerceapi.exception.user.InvalidAddressException;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -10,6 +11,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "user_addresses")
+@Getter
 public class Address {
 
     //region FIELDS
@@ -17,16 +19,22 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 50)
     private String label;
 
+    @Column(length = 100)
     private String streetName;
 
+    @Column(length = 10)
     private String houseNumber;
 
+    @Column(length = 60)
     private String neighborhood;
 
+    @Column(length = 50)
     private String state;
 
+    @Column(length = 60)
     private String country;
 
     @Column(length = 8)
@@ -66,53 +74,6 @@ public class Address {
         this.state = state;
         this.country = country;
         this.cep = cep;
-    }
-
-    //endregion
-
-    //region GETTERS
-    public Long getId() {
-        return id;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getStreetName() {
-        return streetName;
-    }
-
-    public String getHouseNumber() {
-        return houseNumber;
-    }
-
-    public String getNeighborhood() {
-        return neighborhood;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public String getCep() {
-        return cep;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
     //endregion
 
