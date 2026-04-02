@@ -5,9 +5,15 @@ import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.AddressResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserDetailsResponseDTO;
+import com.brunomoura.ecommerceapi.dto.user.UserSummaryResponseDTO;
+import com.brunomoura.ecommerceapi.enums.UserRole;
 import com.brunomoura.ecommerceapi.utils.formatter.EmailUtils;
 import com.brunomoura.ecommerceapi.utils.formatter.PhoneNumberUtils;
+
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.time.LocalDate;
 
 @Component
 public class UserMapper {
@@ -30,6 +36,21 @@ public class UserMapper {
                 user.getCpf(),
                 user.getPhoneNumber(),
                 user.getDateOfBirth()
+        );
+    }
+
+    public UserSummaryResponseDTO convertUserToSummaryResponse(User user) {
+
+        return new UserSummaryResponseDTO(
+                user.getId(),
+                user.getName(),
+                user.getCpf(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getDateOfBirth(),
+                user.getRole(),
+                user.getDeletedAt(),
+                user.getCreatedAt()
         );
     }
 

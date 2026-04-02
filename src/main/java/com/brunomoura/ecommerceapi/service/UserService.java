@@ -1,28 +1,26 @@
 package com.brunomoura.ecommerceapi.service;
 
-import com.brunomoura.ecommerceapi.domain.user.Address;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
 import com.brunomoura.ecommerceapi.domain.user.User;
-import com.brunomoura.ecommerceapi.dto.user.AddressResponseDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserCreateResponseDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserDetailsResponseDTO;
+import com.brunomoura.ecommerceapi.dto.user.*;
+import com.brunomoura.ecommerceapi.exception.user.InvalidRangeDateException;
 import com.brunomoura.ecommerceapi.exception.user.UserAlreadyExistsException;
 import com.brunomoura.ecommerceapi.exception.user.UserNotFoundException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
+import com.brunomoura.ecommerceapi.specification.UserSpecification;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -66,15 +64,39 @@ public class UserService {
     }
 
     public UserDetailsResponseDTO findActiveById(Long id) {
+
         User user = getActiveUserOrThrow(id);
 
         return userMapper.convertUserToDetailsResponse(user);
     }
 
     public List<AddressResponseDTO> findAddresses(Long id) {
+
         User user = getActiveUserOrThrow(id);
 
         return user.getAddresses().stream().map(userMapper::convertAddressToResponse).toList();
+    }
+
+    public Page<UserSummaryResponseDTO> search(UserFilterDTO userFilterDTO, Pageable pageable) {
+
+        validateRangeDate(userFilterDTO.getInitialDateOfDelete(), userFilterDTO.getFinalDateOfDelete());
+
+        validateRangeDate(userFilterDTO.getInitialDateOfCreation(), userFilterDTO.getFinalDateOfCreation());
+
+        Specification<User> spec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+
+        spec = spec.and(UserSpecification.hasId(userFilterDTO.getId()));
+        spec = spec.and(UserSpecification.hasName(userFilterDTO.getName()));
+        spec = spec.and(UserSpecification.hasCpf(userFilterDTO.getCpf()));
+        spec = spec.and(UserSpecification.hasEmail(userFilterDTO.getEmail()));
+        spec = spec.and(UserSpecification.hasRole(userFilterDTO.getRole()));
+        spec = spec.and(UserSpecification.wasDeletedAt(userFilterDTO.getInitialDateOfDelete(),
+                userFilterDTO.getFinalDateOfDelete()));
+        spec = spec.and(UserSpecification.wasCreatedAt(userFilterDTO.getInitialDateOfCreation(),
+                userFilterDTO.getFinalDateOfCreation()));
+
+
+        return userRepository.findAll(spec, pageable).map(userMapper::convertUserToSummaryResponse);
     }
 
     // INTERNAL METHODS
@@ -82,6 +104,15 @@ public class UserService {
 
         return userRepository.findById(id).orElseThrow(
                 () -> new UserNotFoundException(String.format("User with id: %d not found.", id)));
+    }
+
+    private void validateRangeDate(Instant initialDate, Instant finalDate) {
+        if (initialDate != null && finalDate != null) {
+
+            if (initialDate.isAfter(finalDate)) {
+                throw new InvalidRangeDateException("The range date informed is not valid.");
+            }
+        }
     }
     //endregion
 

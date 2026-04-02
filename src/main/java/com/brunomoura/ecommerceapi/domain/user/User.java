@@ -85,6 +85,7 @@ public class User {
     //endregion
 
     //region GETTERS
+
     public Long getId() {
         return id;
     }
@@ -109,9 +110,22 @@ public class User {
         return dateOfBirth;
     }
 
+    public UserRole getRole() {
+        return role;
+    }
+
     public Set<Address> getAddresses() {
         return addresses;
     }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     //endregion
 
     //region SETTERS
