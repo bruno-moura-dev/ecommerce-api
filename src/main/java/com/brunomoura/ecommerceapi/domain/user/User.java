@@ -1,10 +1,7 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
 import com.brunomoura.ecommerceapi.enums.UserRole;
-import com.brunomoura.ecommerceapi.exception.user.AddressAlreadyExistsException;
-import com.brunomoura.ecommerceapi.exception.user.AddressNotFoundException;
-import com.brunomoura.ecommerceapi.exception.user.InvalidUserException;
-import com.brunomoura.ecommerceapi.exception.user.MissingRequiredAddressException;
+import com.brunomoura.ecommerceapi.exception.user.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -42,8 +39,6 @@ public class User {
     @Enumerated(value = EnumType.STRING)
     private UserRole role;
 
-    private boolean active;
-
     @OneToMany(
             fetch = FetchType.LAZY,
             mappedBy = "user",
@@ -51,6 +46,8 @@ public class User {
             orphanRemoval = true
     )
     private Set<Address> addresses = new HashSet<>();
+
+    private Instant deletedAt;
 
     @CreationTimestamp
     private Instant createdAt;
@@ -66,7 +63,7 @@ public class User {
     protected User() {
     }
 
-    public User(String name, String cpf, String email, String phoneNumber, LocalDate dateOfBirth,
+    public User(String name, String email, String cpf, String phoneNumber, LocalDate dateOfBirth,
                 String passwordHash) {
 
         validateStringField("name", name);
@@ -83,7 +80,7 @@ public class User {
         this.dateOfBirth = dateOfBirth;
         this.passwordHash = passwordHash;
         this.role = UserRole.USER;
-        this.active = true;
+        this.deletedAt = null;
     }
     //endregion
 
@@ -112,44 +109,53 @@ public class User {
         return dateOfBirth;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public Set<Address> getAddresses() {
+        return addresses;
     }
+    //endregion
 
-    public UserRole getRole() {
-        return role;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
+    //region SETTERS
+    private void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
     //endregion
 
     //region DOMAIN METHODS
+    public boolean isActive() {
+        return this.deletedAt == null;
+    }
+
+    public void activeUser() {
+        if (this.deletedAt != null) {
+            setDeletedAt(null);
+        }
+    }
+
+    public void deleteUser() {
+        if (this.deletedAt == null) {
+            setDeletedAt(Instant.now());
+        }
+    }
 
     // Ensures address uniqueness within the aggregate based on value equality.
-    public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
-                           String country, String cep) {
+    public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
+                           String cep) {
+        ensuresUserActive();
 
-        Optional<Address> foundAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
+        Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
+
+        Optional<Address> foundAddress = findSameAddress(newAddress);
 
         if (foundAddress.isPresent()) {
             throw new AddressAlreadyExistsException("Address already exists.");
         }
 
-        addAddressInternal(label, streetName, houseNumber, neighborhood, state, country, cep);
+        addAddressInternal(newAddress);
     }
 
-
     public void removeAddress(Long id) {
+        ensuresUserActive();
+
         Address foundAddress = findAddress(id);
 
         // Prevents address must contain one address at least
@@ -161,9 +167,14 @@ public class User {
     }
 
     // Prevents duplicate addresses and ensures idempotent updates.
-    public void updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood,
-                              String state, String country, String cep) {
-        Optional<Address> foundAddress = findSameAddress(streetName, houseNumber, neighborhood, state, country, cep);
+    public void updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood, String state, String country,
+                              String cep) {
+        ensuresUserActive();
+
+        Address address = new Address(
+                label, streetName, houseNumber, neighborhood, state, country, cep);
+
+        Optional<Address> foundAddress = findSameAddress(address);
 
         if (foundAddress.isPresent()) {
 
@@ -186,10 +197,8 @@ public class User {
 
     // Searches for an address using value-based equality. (not by ID)
     // Using to enforce uniqueness within the aggregate.
-    private Optional<Address> findSameAddress(String streetName, String houseNumber, String neighborhood, String state,
-                                              String country, String cep) {
-        return this.addresses.stream().filter(address -> address.isSameAddress(
-                streetName, houseNumber, neighborhood, state, country, cep)).findFirst();
+    private Optional<Address> findSameAddress(Address otherAddress) {
+        return this.addresses.stream().filter(address -> address.isSameAddress(otherAddress)).findFirst();
     }
 
     private Address findAddress(Long id) {
@@ -203,11 +212,9 @@ public class User {
         return findAddress.get();
     }
 
-    private void addAddressInternal(String label, String streetName, String houseNumber, String neighborhood, String state,
-                                    String country, String cep) {
-        Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
-        newAddress.setUser(this);
-        this.addresses.add(newAddress);
+    private void addAddressInternal(Address address) {
+        address.setUser(this);
+        this.addresses.add(address);
     }
 
     private void validateStringField(String field, String value) {
@@ -241,6 +248,12 @@ public class User {
         if (dateValue.isAfter(minBirthDate)) {
             throw new InvalidUserException(
                     "Invalid user. Field: dateOfBirth violates the minimum age constraint (18 years).");
+        }
+    }
+
+    private void ensuresUserActive() {
+        if (!isActive()) {
+            throw new UserAlreadyDeletedException("Users deleted cannot be changed.");
         }
     }
     //endregion

@@ -1,4 +1,4 @@
 package com.brunomoura.ecommerceapi.dto.user;
 
-public record UserCreateResponseDTO(String name, String email, String phoneNumber) {
+public record UserCreateResponseDTO(Long id, String name, String email, String phoneNumber) {
 }
