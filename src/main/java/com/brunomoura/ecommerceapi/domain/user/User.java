@@ -113,7 +113,7 @@ public class User {
     }
 
     // Ensures address uniqueness within the aggregate based on value equality.
-    public void addAddress(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
+    public Address addAddress(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
                            String cep) {
         ensuresUserActive();
 
@@ -125,7 +125,7 @@ public class User {
             throw new AddressAlreadyExistsException("Address already exists.");
         }
 
-        addAddressInternal(newAddress);
+        return addAddressInternal(newAddress);
     }
 
     public void removeAddress(Long id) {
@@ -142,7 +142,7 @@ public class User {
     }
 
     // Prevents duplicate addresses and ensures idempotent updates.
-    public void updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood, String state, String country,
+    public Address updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood, String state, String country,
                               String cep) {
         ensuresUserActive();
 
@@ -155,18 +155,19 @@ public class User {
 
             if (foundAddress.get().getId().equals(id)) {
                 // No-op: same address, no state change required
-                return;
+                 return foundAddress.get();
             } else {
                 throw new AddressAlreadyExistsException("Address already exists.");
             }
         } else {
             // Add first to ensure the user is never left without an address.
             // This avoids violating the "at least one address" business rule.
-            addAddress(label, streetName, houseNumber, neighborhood, state, country, cep);
+            Address newAddress = addAddress(label, streetName, houseNumber, neighborhood, state, country, cep);
             removeAddress(id);
+
+            return newAddress;
         }
     }
-
 
     // Searches for an address using value-based equality. (not by ID)
     // Using to enforce uniqueness within the aggregate.
@@ -185,9 +186,11 @@ public class User {
         return findAddress.get();
     }
 
-    private void addAddressInternal(Address address) {
+    private Address addAddressInternal(Address address) {
         address.setUser(this);
         this.addresses.add(address);
+
+        return address;
     }
 
     private void validateStringField(String field, String value) {

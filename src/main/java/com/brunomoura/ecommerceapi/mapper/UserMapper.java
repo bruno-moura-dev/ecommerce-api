@@ -6,14 +6,11 @@ import com.brunomoura.ecommerceapi.dto.user.AddressResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserDetailsResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserSummaryResponseDTO;
-import com.brunomoura.ecommerceapi.enums.UserRole;
 import com.brunomoura.ecommerceapi.utils.formatter.EmailUtils;
 import com.brunomoura.ecommerceapi.utils.formatter.PhoneNumberUtils;
 
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.LocalDate;
 
 @Component
 public class UserMapper {

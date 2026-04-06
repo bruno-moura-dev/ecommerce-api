@@ -1,10 +1,10 @@
 package com.brunomoura.ecommerceapi.service;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
+import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.exception.user.InvalidRangeDateException;
@@ -26,23 +26,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserService {
 
-    //region DEPENDENCIES
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-    //endregion
 
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    //region CONSTRUCTOR
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
     }
-    //endregion
 
-    //region METHODS
     @Transactional
     public UserCreateResponseDTO create(UserCreateRequestDTO userCreateRequestDTO) {
 
@@ -59,21 +54,22 @@ public class UserService {
                 address.getNeighborhood(), address.getState(), address.getCountry(), address.getCep()));
 
         userRepository.save(user);
-        logger.info("User with id: {} created successfully.", user.getId());
+
+        logger.info("User created successfully. userId={}", user.getId());
 
         return userMapper.convertUserToCreateResponse(user);
     }
 
-    public UserDetailsResponseDTO findActiveById(Long id) {
+    public UserDetailsResponseDTO findActiveById(Long userId) {
 
-        User user = getActiveUserOrThrow(id);
+        User user = getActiveUserOrThrow(userId);
 
         return userMapper.convertUserToDetailsResponse(user);
     }
 
-    public List<AddressResponseDTO> findAddresses(Long id) {
+    public List<AddressResponseDTO> findAddresses(Long userId) {
 
-        User user = getActiveUserOrThrow(id);
+        User user = getActiveUserOrThrow(userId);
 
         return user.getAddresses().stream().map(userMapper::convertAddressToResponse).toList();
     }
@@ -101,9 +97,9 @@ public class UserService {
     }
 
     @Transactional
-    public UserDetailsResponseDTO updateUser(Long id, UserUpdateDTO userUpdateDTO) {
+    public UserDetailsResponseDTO updateUser(Long userId, UserUpdateDTO userUpdateDTO) {
 
-        User user = getActiveUserOrThrow(id);
+        User user = getActiveUserOrThrow(userId);
 
         if (userUpdateDTO.getName() != null) {
             user.setName(userUpdateDTO.getName());
@@ -113,7 +109,7 @@ public class UserService {
 
             if (!Objects.equals(userUpdateDTO.getCpf(), user.getCpf())) {
 
-                if (userRepository.existsByCpfAndIdNot(userUpdateDTO.getCpf(), id)) {
+                if (userRepository.existsByCpfAndIdNot(userUpdateDTO.getCpf(), userId)) {
                     throw new UserAlreadyExistsException(String.format("User with CPF: %s already exists.",
                             userUpdateDTO.getCpf()));
                 }
@@ -145,16 +141,47 @@ public class UserService {
             user.setDateOfBirth(userUpdateDTO.getDateOfBirth());
         }
 
-        User userSaved = userRepository.save(user);
+        logger.info("User updated successfully. userId={}", userId);
 
-        return userMapper.convertUserToDetailsResponse(userSaved);
+        return userMapper.convertUserToDetailsResponse(user);
     }
 
-    // INTERNAL METHODS
-    private User getActiveUserOrThrow(Long id) {
+    @Transactional
+    public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO addressRequestDTO) {
 
-        return userRepository.findById(id).orElseThrow(
-                () -> new UserNotFoundException(String.format("User with id: %d not found.", id)));
+        User user = getActiveUserOrThrow(userId);
+
+        Address updatedAddress = user.updateAddress(addressId, addressRequestDTO.getLabel(), addressRequestDTO.getStreetName(),
+                addressRequestDTO.getHouseNumber(), addressRequestDTO.getNeighborhood(), addressRequestDTO.getState(),
+                addressRequestDTO.getCountry(), addressRequestDTO.getCep());
+
+        logger.info("Address updated successfully. userId={}, addressId={}", userId, addressId);
+
+        return userMapper.convertAddressToResponse(updatedAddress);
+    }
+
+    @Transactional
+    public void removeAddress(Long userId, Long addressId) {
+
+        User user = getActiveUserOrThrow(userId);
+        user.removeAddress(addressId);
+
+        logger.info("Address removed successfully. userId={}, addressId={}", userId, addressId);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+
+        User user = getActiveUserOrThrow(userId);
+        user.deleteUser();
+
+        logger.info("User soft deleted. userId={}", userId);
+    }
+
+    private User getActiveUserOrThrow(Long userId) {
+
+        return userRepository.findActiveById(userId).orElseThrow(
+                () -> new UserNotFoundException(String.format("User with id: %d not found.", userId)));
     }
 
     private void validateRangeDate(Instant initialDate, Instant finalDate) {
@@ -165,7 +192,6 @@ public class UserService {
             }
         }
     }
-    //endregion
 
 
 }
