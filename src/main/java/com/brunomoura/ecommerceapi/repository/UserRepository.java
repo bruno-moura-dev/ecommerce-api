@@ -19,4 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     @Query("SELECT u FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
     Optional<User> findActiveById(Long id);
+
+    boolean existsByCpfAndIdNot(String cpf, Long id);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
 }

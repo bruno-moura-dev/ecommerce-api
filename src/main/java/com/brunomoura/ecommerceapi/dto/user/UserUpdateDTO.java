@@ -1,0 +1,30 @@
+package com.brunomoura.ecommerceapi.dto.user;
+
+import com.brunomoura.ecommerceapi.validation.annotation.ValidDateOfBirth;
+import com.brunomoura.ecommerceapi.validation.annotation.ValidPhoneNumber;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import org.hibernate.validator.constraints.br.CPF;
+
+import java.time.LocalDate;
+
+@Getter
+public class UserUpdateDTO {
+
+    @Size(max = 100, message = "Name must be between 2 and 100 characters long.")
+    private String name;
+
+    @CPF(message = "Invalid CPF format.")
+    private String cpf;
+
+    @Email(message = "Invalid e-mail format.")
+    private String email;
+
+    @ValidPhoneNumber
+    private String phoneNumber;
+
+    @ValidDateOfBirth
+    private LocalDate dateOfBirth;
+
+}

@@ -3,6 +3,8 @@ package com.brunomoura.ecommerceapi.domain.user;
 import com.brunomoura.ecommerceapi.enums.UserRole;
 import com.brunomoura.ecommerceapi.exception.user.*;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,31 +16,38 @@ import java.util.*;
 @Table(name = "users")
 public class User {
 
-    //region FIELDS
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Getter @Setter
     @Column(length = 100)
     private String name;
 
+    @Getter @Setter
     @Column(length = 11, unique = true)
     private String cpf;
 
+    @Getter @Setter
     @Column(unique = true)
     private String email;
 
+    @Getter @Setter
     @Column(length = 14)
     private String phoneNumber;
 
+    @Getter @Setter
     private LocalDate dateOfBirth;
 
     @Column(length = 128)
     private String passwordHash;
 
+    @Getter
     @Enumerated(value = EnumType.STRING)
     private UserRole role;
 
+    @Getter
     @OneToMany(
             fetch = FetchType.LAZY,
             mappedBy = "user",
@@ -47,8 +56,10 @@ public class User {
     )
     private Set<Address> addresses = new HashSet<>();
 
+    @Getter
     private Instant deletedAt;
 
+    @Getter
     @CreationTimestamp
     private Instant createdAt;
 
@@ -57,9 +68,7 @@ public class User {
 
     @Version
     private Long version;
-    //endregion
 
-    //region CONSTRUCTORS
     protected User() {
     }
 
@@ -82,59 +91,11 @@ public class User {
         this.role = UserRole.USER;
         this.deletedAt = null;
     }
-    //endregion
 
-    //region GETTERS
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public Set<Address> getAddresses() {
-        return addresses;
-    }
-
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    //endregion
-
-    //region SETTERS
     private void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
     }
-    //endregion
 
-    //region DOMAIN METHODS
     public boolean isActive() {
         return this.deletedAt == null;
     }
@@ -205,9 +166,7 @@ public class User {
             removeAddress(id);
         }
     }
-    //endregion
 
-    //region INTERNAL METHODS
 
     // Searches for an address using value-based equality. (not by ID)
     // Using to enforce uniqueness within the aggregate.
@@ -270,6 +229,5 @@ public class User {
             throw new UserAlreadyDeletedException("Users deleted cannot be changed.");
         }
     }
-    //endregion
 
 }

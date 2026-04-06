@@ -3,6 +3,7 @@ package com.brunomoura.ecommerceapi.service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
@@ -97,6 +98,56 @@ public class UserService {
 
 
         return userRepository.findAll(spec, pageable).map(userMapper::convertUserToSummaryResponse);
+    }
+
+    @Transactional
+    public UserDetailsResponseDTO updateUser(Long id, UserUpdateDTO userUpdateDTO) {
+
+        User user = getActiveUserOrThrow(id);
+
+        if (userUpdateDTO.getName() != null) {
+            user.setName(userUpdateDTO.getName());
+        }
+
+        if (userUpdateDTO.getCpf() != null) {
+
+            if (!Objects.equals(userUpdateDTO.getCpf(), user.getCpf())) {
+
+                if (userRepository.existsByCpfAndIdNot(userUpdateDTO.getCpf(), id)) {
+                    throw new UserAlreadyExistsException(String.format("User with CPF: %s already exists.",
+                            userUpdateDTO.getCpf()));
+                }
+
+                user.setCpf(userUpdateDTO.getCpf());
+            }
+        }
+
+        if (userUpdateDTO.getEmail() != null) {
+
+            if (!Objects.equals(userUpdateDTO.getEmail(), user.getEmail())) {
+
+                if (userRepository.existsByEmailAndIdNot(userUpdateDTO.getEmail(), user.getId())) {
+                    throw new UserAlreadyExistsException(String.format("User with e-mail: %s already exists.",
+                            userUpdateDTO.getEmail()));
+                }
+
+                user.setEmail(userUpdateDTO.getEmail());
+            }
+        }
+
+        if (userUpdateDTO.getPhoneNumber() != null) {
+
+            user.setPhoneNumber(userUpdateDTO.getPhoneNumber());
+        }
+
+        if (userUpdateDTO.getDateOfBirth() != null) {
+
+            user.setDateOfBirth(userUpdateDTO.getDateOfBirth());
+        }
+
+        User userSaved = userRepository.save(user);
+
+        return userMapper.convertUserToDetailsResponse(userSaved);
     }
 
     // INTERNAL METHODS

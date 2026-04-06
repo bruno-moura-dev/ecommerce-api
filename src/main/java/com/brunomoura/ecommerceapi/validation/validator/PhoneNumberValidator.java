@@ -12,7 +12,7 @@ public class PhoneNumberValidator implements ConstraintValidator<ValidPhoneNumbe
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null || value.isBlank()) {
-            return false;
+            return true;
         }
 
         try {
