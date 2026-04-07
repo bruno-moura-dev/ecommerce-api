@@ -30,6 +30,7 @@ public class UserMapper {
         return new UserDetailsResponseDTO(
                 user.getId(),
                 user.getName(),
+                user.getEmail(),
                 user.getCpf(),
                 user.getPhoneNumber(),
                 user.getDateOfBirth()

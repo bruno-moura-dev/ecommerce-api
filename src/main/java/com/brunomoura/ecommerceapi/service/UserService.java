@@ -148,9 +148,9 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePassword(Long id, UserUpdatePasswordDTO userUpdatePasswordDTO) {
+    public void updatePassword(Long userId, UserUpdatePasswordDTO userUpdatePasswordDTO) {
 
-        User user = getActiveUserOrThrow(id);
+        User user = getActiveUserOrThrow(userId);
 
         if (!passwordEncoder.matches(userUpdatePasswordDTO.getCurrentPassword(), user.getPasswordHash())) {
             throw new InvalidPasswordException("Invalid password.");
@@ -158,6 +158,18 @@ public class UserService {
 
         user.changePassword(userUpdatePasswordDTO.getNewPassword(),
                 passwordEncoder.encode(userUpdatePasswordDTO.getNewPassword()));
+
+        logger.info("User password updated successfully. userId={}", userId);
+    }
+
+    @Transactional
+    public void reactivate(Long userId) {
+
+        User user = findByIdIncludingDeleted(userId);
+
+        user.activeUser();
+
+        logger.info("User successfully reactivated. userId={}", userId);
     }
 
     @Transactional
@@ -190,14 +202,6 @@ public class UserService {
         user.deleteUser();
 
         logger.info("User soft deleted. userId={}", userId);
-    }
-
-    @Transactional
-    public void reactivate(Long userId) {
-
-        User user = findByIdIncludingDeleted(userId);
-
-        user.activeUser();
     }
 
     private User getActiveUserOrThrow(Long userId) {
