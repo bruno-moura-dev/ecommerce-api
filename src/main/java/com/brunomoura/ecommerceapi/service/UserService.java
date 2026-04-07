@@ -7,6 +7,7 @@ import java.util.Objects;
 import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
+import com.brunomoura.ecommerceapi.exception.user.InvalidPasswordException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidRangeDateException;
 import com.brunomoura.ecommerceapi.exception.user.UserAlreadyExistsException;
 import com.brunomoura.ecommerceapi.exception.user.UserNotFoundException;
@@ -97,7 +98,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserDetailsResponseDTO updateUser(Long userId, UserUpdateDTO userUpdateDTO) {
+    public UserDetailsResponseDTO update(Long userId, UserUpdateDTO userUpdateDTO) {
 
         User user = getActiveUserOrThrow(userId);
 
@@ -147,6 +148,19 @@ public class UserService {
     }
 
     @Transactional
+    public void updatePassword(Long id, UserUpdatePasswordDTO userUpdatePasswordDTO) {
+
+        User user = getActiveUserOrThrow(id);
+
+        if (!passwordEncoder.matches(userUpdatePasswordDTO.getCurrentPassword(), user.getPasswordHash())) {
+            throw new InvalidPasswordException("Invalid password.");
+        }
+
+        user.changePassword(userUpdatePasswordDTO.getNewPassword(),
+                passwordEncoder.encode(userUpdatePasswordDTO.getNewPassword()));
+    }
+
+    @Transactional
     public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO addressRequestDTO) {
 
         User user = getActiveUserOrThrow(userId);
@@ -170,7 +184,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
+    public void delete(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
         user.deleteUser();

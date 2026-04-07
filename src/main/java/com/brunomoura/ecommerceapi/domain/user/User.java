@@ -29,7 +29,7 @@ public class User {
     @Column(length = 11, unique = true)
     private String cpf;
 
-    @Getter @Setter
+    @Getter
     @Column(unique = true)
     private String email;
 
@@ -40,6 +40,7 @@ public class User {
     @Getter @Setter
     private LocalDate dateOfBirth;
 
+    @Getter
     @Column(length = 128)
     private String passwordHash;
 
@@ -81,10 +82,11 @@ public class User {
         validateStringField("phoneNumber", phoneNumber);
         validateDateOfBirth(dateOfBirth);
         validateStringField("passwordHash", passwordHash);
+        validatePasswordAgainstEmail(passwordHash);
 
         this.name = name;
         this.cpf = cpf;
-        this.email = email;
+        this.email = email.toLowerCase();
         this.phoneNumber = phoneNumber;
         this.dateOfBirth = dateOfBirth;
         this.passwordHash = passwordHash;
@@ -92,11 +94,20 @@ public class User {
         this.deletedAt = null;
     }
 
-    private void setDeletedAt(Instant deletedAt) {
-        this.deletedAt = deletedAt;
+    public void setEmail(String email) {
+
+        this.email = email.toLowerCase();
+    }
+
+    public void changePassword(String newPassword, String newPasswordHash) {
+
+        validatePasswordAgainstEmail(newPassword);
+
+        this.passwordHash = newPasswordHash;
     }
 
     public boolean isActive() {
+
         return this.deletedAt == null;
     }
 
@@ -194,11 +205,7 @@ public class User {
     }
 
     private void validateStringField(String field, String value) {
-        if (value == null) {
-            throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
-        }
-
-        if (value.isBlank()) {
+        if (value == null || value.isBlank()) {
             throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
         }
     }
@@ -227,10 +234,23 @@ public class User {
         }
     }
 
+    private void validatePasswordAgainstEmail(String password) {
+
+        if (Objects.equals(password.toLowerCase(), this.email)) {
+            throw new WeakPasswordException("Weak password. The provided password does not meet the minimum " +
+                    "security requirements.");
+        }
+    }
+
     private void ensuresUserActive() {
-        if (!isActive()) {
+
+        if (this.deletedAt != null) {
             throw new UserAlreadyDeletedException("Users deleted cannot be changed.");
         }
+    }
+
+    private void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
 }
