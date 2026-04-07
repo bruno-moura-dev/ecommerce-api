@@ -192,10 +192,25 @@ public class UserService {
         logger.info("User soft deleted. userId={}", userId);
     }
 
+    @Transactional
+    public void reactivate(Long userId) {
+
+        User user = findByIdIncludingDeleted(userId);
+
+        user.activeUser();
+    }
+
     private User getActiveUserOrThrow(Long userId) {
 
         return userRepository.findActiveById(userId).orElseThrow(
                 () -> new UserNotFoundException(String.format("User with id: %d not found.", userId)));
+    }
+
+    private User findByIdIncludingDeleted(Long userId) {
+
+        return userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException(String.format("User not found. userId=%d", userId))
+        );
     }
 
     private void validateRangeDate(Instant initialDate, Instant finalDate) {
