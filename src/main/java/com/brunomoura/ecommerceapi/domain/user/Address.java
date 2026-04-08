@@ -1,6 +1,7 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
-import com.brunomoura.ecommerceapi.exception.user.InvalidAddressException;
+import com.brunomoura.ecommerceapi.enums.ErrorCode;
+import com.brunomoura.ecommerceapi.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -14,7 +15,6 @@ import java.util.Objects;
 @Getter
 public class Address {
 
-    //region FIELDS
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -52,9 +52,7 @@ public class Address {
 
     @Version
     private Long version;
-    //endregion
 
-    //region CONSTRUCTORS
     protected Address() {}
 
      Address(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
@@ -75,35 +73,28 @@ public class Address {
         this.country = country;
         this.cep = cep;
     }
-    //endregion
 
-    //region SETTERS
     void setUser(User user) {
         this.user = user;
     }
     //endregion
 
-    //region DOMAIN METHODS
-    boolean isSameAddress(String streetName, String houseNumber, String neighborhood, String state,
-                                 String country, String cep) {
-        return Objects.equals(this.streetName, streetName)
-                && Objects.equals(this.houseNumber, houseNumber)
-                && Objects.equals(this.neighborhood, neighborhood)
-                && Objects.equals(this.state, state)
-                && Objects.equals(this.country, country)
-                && Objects.equals(this.cep, cep);
+    boolean isSameAddress(Address address) {
+        return Objects.equals(this.streetName, address.getStreetName())
+                && Objects.equals(this.houseNumber, address.getHouseNumber())
+                && Objects.equals(this.neighborhood, address.getNeighborhood())
+                && Objects.equals(this.state, address.getState())
+                && Objects.equals(this.country, address.getCountry())
+                && Objects.equals(this.cep, address.getCep());
     }
-    //endregion
 
-    //region INTERNAL METHODS
     private void validateField(String field ,String value) {
         if (value == null || value.isBlank()) {
-            throw new InvalidAddressException(String.format("Invalid address. Field: %s", field));
+            throw new BusinessException(ErrorCode.INVALID_ADDRESS_FIELD, "Field must not be null or blank: field="
+            + field);
         }
     }
-    //endregion
 
-    //region INFRASTRUCTURE METHODS
     // Equality is based on address fields (value-based), not on ID.
     // This allows the Set to prevent duplicate addresses.
     @Override
@@ -113,8 +104,7 @@ public class Address {
 
         Address address = (Address) o;
 
-        return isSameAddress(address.getStreetName(), address.getHouseNumber(), address.getNeighborhood(),
-                address.getState(), address.getCountry(), address.getCep());
+        return isSameAddress(address);
     }
 
     @Override
@@ -122,5 +112,4 @@ public class Address {
         return Objects.hash(this.streetName, this.houseNumber, this.neighborhood, this.state, this.country,
                 this.cep);
     }
-    //endregion
 }

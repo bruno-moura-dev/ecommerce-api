@@ -15,11 +15,11 @@ public class UserUpdateDTO {
     @Size(max = 100, message = "Name must be between 2 and 100 characters long.")
     private String name;
 
-    @CPF(message = "Invalid CPF format.")
-    private String cpf;
-
     @Email(message = "Invalid e-mail format.")
     private String email;
+
+    @CPF(message = "Invalid CPF format.")
+    private String cpf;
 
     @ValidPhoneNumber
     private String phoneNumber;

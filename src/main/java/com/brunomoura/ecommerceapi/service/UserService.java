@@ -3,14 +3,15 @@ package com.brunomoura.ecommerceapi.service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
-import com.brunomoura.ecommerceapi.exception.user.InvalidPasswordException;
-import com.brunomoura.ecommerceapi.exception.user.InvalidRangeDateException;
-import com.brunomoura.ecommerceapi.exception.user.UserAlreadyExistsException;
-import com.brunomoura.ecommerceapi.exception.user.UserNotFoundException;
+import com.brunomoura.ecommerceapi.enums.ErrorCode;
+import com.brunomoura.ecommerceapi.exception.BusinessException;
+import com.brunomoura.ecommerceapi.exception.InvalidPasswordException;
+import com.brunomoura.ecommerceapi.exception.NotFoundException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
 import com.brunomoura.ecommerceapi.specification.UserSpecification;
@@ -40,17 +41,14 @@ public class UserService {
     }
 
     @Transactional
-    public UserCreateResponseDTO create(UserCreateRequestDTO userCreateRequestDTO) {
+    public UserCreateResponseDTO create(UserCreateRequestDTO dto) {
+        validateUserUniquenessOrThrow(dto);
 
-        if (userRepository.existsByEmailOrCpf(userCreateRequestDTO.getEmail(), userCreateRequestDTO.getCpf())) {
-            throw new UserAlreadyExistsException("User already exists.");
-        }
+        User user = new User(dto.getName(), dto.getEmail(),
+                dto.getCpf(), dto.getPhoneNumber(),
+                dto.getDateOfBirth(), passwordEncoder.encode(dto.getPassword()));
 
-        User user = new User(userCreateRequestDTO.getName(), userCreateRequestDTO.getEmail(),
-                userCreateRequestDTO.getCpf(), userCreateRequestDTO.getPhoneNumber(),
-                userCreateRequestDTO.getDateOfBirth(), passwordEncoder.encode(userCreateRequestDTO.getPassword()));
-
-        userCreateRequestDTO.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
+        dto.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
                 address.getStreetName(), address.getHouseNumber(),
                 address.getNeighborhood(), address.getState(), address.getCountry(), address.getCep()));
 
@@ -75,71 +73,71 @@ public class UserService {
         return user.getAddresses().stream().map(userMapper::convertAddressToResponse).toList();
     }
 
-    public Page<UserSummaryResponseDTO> search(UserFilterDTO userFilterDTO, Pageable pageable) {
+    public Page<UserSummaryResponseDTO> search(UserFilterDTO dto, Pageable pageable) {
 
-        validateRangeDate(userFilterDTO.getInitialDateOfDelete(), userFilterDTO.getFinalDateOfDelete());
+        validateRangeDate(dto.getInitialDateOfDelete(), dto.getFinalDateOfDelete());
 
-        validateRangeDate(userFilterDTO.getInitialDateOfCreation(), userFilterDTO.getFinalDateOfCreation());
+        validateRangeDate(dto.getInitialDateOfCreation(), dto.getFinalDateOfCreation());
 
         Specification<User> spec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 
-        spec = spec.and(UserSpecification.hasId(userFilterDTO.getId()));
-        spec = spec.and(UserSpecification.hasName(userFilterDTO.getName()));
-        spec = spec.and(UserSpecification.hasCpf(userFilterDTO.getCpf()));
-        spec = spec.and(UserSpecification.hasEmail(userFilterDTO.getEmail()));
-        spec = spec.and(UserSpecification.hasRole(userFilterDTO.getRole()));
-        spec = spec.and(UserSpecification.wasDeletedAt(userFilterDTO.getInitialDateOfDelete(),
-                userFilterDTO.getFinalDateOfDelete()));
-        spec = spec.and(UserSpecification.wasCreatedAt(userFilterDTO.getInitialDateOfCreation(),
-                userFilterDTO.getFinalDateOfCreation()));
+        spec = spec.and(UserSpecification.hasId(dto.getId()));
+        spec = spec.and(UserSpecification.hasName(dto.getName()));
+        spec = spec.and(UserSpecification.hasCpf(dto.getCpf()));
+        spec = spec.and(UserSpecification.hasEmail(dto.getEmail()));
+        spec = spec.and(UserSpecification.hasRole(dto.getRole()));
+        spec = spec.and(UserSpecification.wasDeletedAt(dto.getInitialDateOfDelete(),
+                dto.getFinalDateOfDelete()));
+        spec = spec.and(UserSpecification.wasCreatedAt(dto.getInitialDateOfCreation(),
+                dto.getFinalDateOfCreation()));
 
 
         return userRepository.findAll(spec, pageable).map(userMapper::convertUserToSummaryResponse);
     }
 
     @Transactional
-    public UserDetailsResponseDTO update(Long userId, UserUpdateDTO userUpdateDTO) {
+    public UserDetailsResponseDTO update(Long userId, UserUpdateDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
 
-        if (userUpdateDTO.getName() != null) {
-            user.setName(userUpdateDTO.getName());
+        if (dto.getName() != null) {
+            user.setName(dto.getName());
         }
 
-        if (userUpdateDTO.getCpf() != null) {
+        if (dto.getEmail() != null) {
 
-            if (!Objects.equals(userUpdateDTO.getCpf(), user.getCpf())) {
+            if (!Objects.equals(dto.getEmail(), user.getEmail())) {
 
-                if (userRepository.existsByCpfAndIdNot(userUpdateDTO.getCpf(), userId)) {
-                    throw new UserAlreadyExistsException(String.format("User with CPF: %s already exists.",
-                            userUpdateDTO.getCpf()));
+                if (userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())) {
+                    throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS,
+                            String.format("User with e-mail: %s already exists", dto.getEmail()));
                 }
 
-                user.setCpf(userUpdateDTO.getCpf());
+                user.setEmail(dto.getEmail());
             }
         }
 
-        if (userUpdateDTO.getEmail() != null) {
+        if (dto.getCpf() != null) {
 
-            if (!Objects.equals(userUpdateDTO.getEmail(), user.getEmail())) {
+            if (!Objects.equals(dto.getCpf(), user.getCpf())) {
 
-                if (userRepository.existsByEmailAndIdNot(userUpdateDTO.getEmail(), user.getId())) {
-                    throw new UserAlreadyExistsException(String.format("User with e-mail: %s already exists.",
-                            userUpdateDTO.getEmail()));
+                if (userRepository.existsByCpfAndIdNot(dto.getCpf(), userId)) {
+                    throw new BusinessException(ErrorCode.CPF_ALREADY_EXISTS,
+                            String.format("User with CPF: %s already exists", dto.getCpf()));
                 }
 
-                user.setEmail(userUpdateDTO.getEmail());
+                user.setCpf(dto.getCpf());
             }
         }
 
-        if (userUpdateDTO.getPhoneNumber() != null) {
+        if (dto.getPhoneNumber() != null) {
 
-            user.setPhoneNumber(userUpdateDTO.getPhoneNumber());
+            user.setPhoneNumber(dto.getPhoneNumber());
         }
 
-        if (userUpdateDTO.getDateOfBirth() != null) {
+        if (dto.getDateOfBirth() != null) {
 
-            user.setDateOfBirth(userUpdateDTO.getDateOfBirth());
+            user.setDateOfBirth(dto.getDateOfBirth());
         }
 
         logger.info("User updated successfully. userId={}", userId);
@@ -148,16 +146,16 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePassword(Long userId, UserUpdatePasswordDTO userUpdatePasswordDTO) {
+    public void updatePassword(Long userId, UserUpdatePasswordDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
 
-        if (!passwordEncoder.matches(userUpdatePasswordDTO.getCurrentPassword(), user.getPasswordHash())) {
-            throw new InvalidPasswordException("Invalid password.");
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new InvalidPasswordException(ErrorCode.INVALID_PASSWORD, "Invalid password");
         }
 
-        user.changePassword(userUpdatePasswordDTO.getNewPassword(),
-                passwordEncoder.encode(userUpdatePasswordDTO.getNewPassword()));
+        user.changePassword(dto.getNewPassword(),
+                passwordEncoder.encode(dto.getNewPassword()));
 
         logger.info("User password updated successfully. userId={}", userId);
     }
@@ -173,13 +171,13 @@ public class UserService {
     }
 
     @Transactional
-    public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO addressRequestDTO) {
+    public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
 
-        Address updatedAddress = user.updateAddress(addressId, addressRequestDTO.getLabel(), addressRequestDTO.getStreetName(),
-                addressRequestDTO.getHouseNumber(), addressRequestDTO.getNeighborhood(), addressRequestDTO.getState(),
-                addressRequestDTO.getCountry(), addressRequestDTO.getCep());
+        Address updatedAddress = user.updateAddress(addressId, dto.getLabel(), dto.getStreetName(),
+                dto.getHouseNumber(), dto.getNeighborhood(), dto.getState(),
+                dto.getCountry(), dto.getCep());
 
         logger.info("Address updated successfully. userId={}, addressId={}", userId, addressId);
 
@@ -204,16 +202,32 @@ public class UserService {
         logger.info("User soft deleted. userId={}", userId);
     }
 
+    private void validateUserUniquenessOrThrow(UserCreateRequestDTO dto) {
+
+        Optional<User> foundUser = userRepository.findByEmailOrCpf(dto.getEmail(),
+                dto.getCpf());
+
+        foundUser.ifPresent(user -> {
+            if (Objects.equals(user.getEmail(), dto.getEmail())) {
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email already exists");
+            }
+            if (Objects.equals(user.getCpf(), dto.getCpf())) {
+                throw new BusinessException(ErrorCode.CPF_ALREADY_EXISTS, "CPF already exists");
+            }
+        });
+    }
+
     private User getActiveUserOrThrow(Long userId) {
 
         return userRepository.findActiveById(userId).orElseThrow(
-                () -> new UserNotFoundException(String.format("User with id: %d not found.", userId)));
+                () -> new NotFoundException(ErrorCode.USER_NOT_FOUND,
+                        String.format("User with id: %d not found", userId)));
     }
 
     private User findByIdIncludingDeleted(Long userId) {
 
         return userRepository.findById(userId).orElseThrow(
-                () -> new UserNotFoundException(String.format("User not found. userId=%d", userId))
+                () -> new NotFoundException(ErrorCode.USER_NOT_FOUND, String.format("User not found. userId=%d", userId))
         );
     }
 
@@ -221,7 +235,7 @@ public class UserService {
         if (initialDate != null && finalDate != null) {
 
             if (initialDate.isAfter(finalDate)) {
-                throw new InvalidRangeDateException("The range date informed is not valid.");
+                throw new BusinessException(ErrorCode.INVALID_RANGE_DATE, "The range date informed is not valid");
             }
         }
     }

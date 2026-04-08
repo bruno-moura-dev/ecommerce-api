@@ -1,7 +1,10 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
+import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import com.brunomoura.ecommerceapi.enums.UserRole;
-import com.brunomoura.ecommerceapi.exception.user.*;
+
+import com.brunomoura.ecommerceapi.exception.BusinessException;
+import com.brunomoura.ecommerceapi.exception.NotFoundException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -124,8 +127,8 @@ public class User {
     }
 
     // Ensures address uniqueness within the aggregate based on value equality.
-    public Address addAddress(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
-                           String cep) {
+    public Address addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
+                              String country, String cep) {
         ensuresUserActive();
 
         Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
@@ -133,7 +136,7 @@ public class User {
         Optional<Address> foundAddress = findSameAddress(newAddress);
 
         if (foundAddress.isPresent()) {
-            throw new AddressAlreadyExistsException("Address already exists.");
+            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
         }
 
         return addAddressInternal(newAddress);
@@ -146,15 +149,16 @@ public class User {
 
         // Prevents address must contain one address at least
         if (this.addresses.size() < 2) {
-            throw new MissingRequiredAddressException("Addresses must contain one address at least.");
+            throw new BusinessException(ErrorCode.LAST_ADDRESS_REMOVAL_NOT_ALLOWED,
+                    "Addresses must contain one address at least.");
         }
 
         this.addresses.remove(foundAddress);
     }
 
     // Prevents duplicate addresses and ensures idempotent updates.
-    public Address updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood, String state, String country,
-                              String cep) {
+    public Address updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood,
+                                 String state, String country, String cep) {
         ensuresUserActive();
 
         Address address = new Address(
@@ -168,7 +172,7 @@ public class User {
                 // No-op: same address, no state change required
                  return foundAddress.get();
             } else {
-                throw new AddressAlreadyExistsException("Address already exists.");
+                throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS ,"Address already exists.");
             }
         } else {
             // Add first to ensure the user is never left without an address.
@@ -191,7 +195,7 @@ public class User {
                 .findFirst();
 
         if (findAddress.isEmpty()) {
-            throw new AddressNotFoundException("Address not found.");
+            throw new NotFoundException(ErrorCode.ADDRESS_NOT_FOUND,"Address not found.");
         }
 
         return findAddress.get();
@@ -206,13 +210,15 @@ public class User {
 
     private void validateStringField(String field, String value) {
         if (value == null || value.isBlank()) {
-            throw new InvalidUserException(String.format("Invalid user. Field: %s cannot be null or blank.", field));
+            throw new BusinessException(ErrorCode.INVALID_USER_FIELD,
+                    String.format("Invalid user. Field: %s cannot be null or blank.", field));
         }
     }
 
     private void validateDateOfBirth(LocalDate dateValue) {
         if (dateValue == null) {
-            throw new InvalidUserException("Invalid user. Field: dateOfBirth cannot be null or blank.");
+            throw new BusinessException(ErrorCode.INVALID_USER_FIELD,
+                    "Invalid user. Field: dateOfBirth cannot be null or blank.");
         }
 
         LocalDate currentDate = LocalDate.now();
@@ -220,16 +226,17 @@ public class User {
         LocalDate minBirthDate = currentDate.minusYears(18);
 
         if (dateValue.isAfter(currentDate)) {
-            throw new InvalidUserException("Invalid user. Field: dateOfBirth cannot be in the future.");
+            throw new BusinessException(ErrorCode.INVALID_RANGE_DATE ,"Invalid user. " +
+                    "Field: dateOfBirth cannot be in the future.");
         }
 
         if (dateValue.isBefore(maxBirthDate)) {
-            throw new InvalidUserException(
+            throw new BusinessException(ErrorCode.INVALID_RANGE_DATE,
                     "Invalid user. Field: dateOfBirth violates the maximum age constraint (125 years).");
         }
 
         if (dateValue.isAfter(minBirthDate)) {
-            throw new InvalidUserException(
+            throw new BusinessException(ErrorCode.INVALID_RANGE_DATE,
                     "Invalid user. Field: dateOfBirth violates the minimum age constraint (18 years).");
         }
     }
@@ -237,15 +244,16 @@ public class User {
     private void validatePasswordAgainstEmail(String password) {
 
         if (Objects.equals(password.toLowerCase(), this.email)) {
-            throw new WeakPasswordException("Weak password. The provided password does not meet the minimum " +
-                    "security requirements.");
+            throw new BusinessException(ErrorCode.WEAK_PASSWORD,
+                    "Weak password. The provided password does not meet the minimum security requirements.");
         }
     }
 
     private void ensuresUserActive() {
 
         if (this.deletedAt != null) {
-            throw new UserAlreadyDeletedException("Users deleted cannot be changed.");
+            throw new BusinessException(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED,
+                    "Users deleted cannot be changed.");
         }
     }
 
