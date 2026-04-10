@@ -58,7 +58,7 @@ public class User {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private Set<Address> addresses = new HashSet<>();
+    private final Set<Address> addresses = new HashSet<>();
 
     @Getter
     private Instant deletedAt;
@@ -103,10 +103,19 @@ public class User {
     }
 
     public void changePassword(String newPassword, String newPasswordHash) {
+        ensuresUserActive();
 
         validatePasswordAgainstEmail(newPassword);
 
         this.passwordHash = newPasswordHash;
+    }
+
+    public void updateRole(UserRole role) {
+        ensuresUserActive();
+
+        if (this.role != role) {
+            this.role = role;
+        }
     }
 
     public boolean isActive() {

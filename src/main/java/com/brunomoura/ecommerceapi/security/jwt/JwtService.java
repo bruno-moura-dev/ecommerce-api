@@ -1,8 +1,7 @@
-package com.brunomoura.ecommerceapi.security;
+package com.brunomoura.ecommerceapi.security.jwt;
 
 import com.brunomoura.ecommerceapi.config.JwtProperties;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +12,6 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 @Service
@@ -44,18 +42,7 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-
-        try {
-            return (extractExpiration(token).after(new Date()) || Objects.equals(extractSubject(token),
-                    userDetails.getUsername()));
-
-        } catch (JwtException e) {
-            return false;
-        }
-    }
-
-    private Claims extractAllClaims(String token) {
+    Claims extractAllClaims(String token) {
 
         return Jwts.parserBuilder().setSigningKey(this.signKey).build().parseClaimsJws(token).getBody();
     }

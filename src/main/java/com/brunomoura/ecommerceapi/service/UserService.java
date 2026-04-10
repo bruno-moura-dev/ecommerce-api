@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,24 +42,17 @@ public class UserService {
     }
 
     @Transactional
-    public UserCreateResponseDTO create(UserCreateRequestDTO dto) {
-        validateUserUniquenessOrThrow(dto);
-
-        User user = new User(dto.getName(), dto.getEmail(),
-                dto.getCpf(), dto.getPhoneNumber(),
-                dto.getDateOfBirth(), passwordEncoder.encode(dto.getPassword()));
-
-        dto.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
-                address.getStreetName(), address.getHouseNumber(),
-                address.getNeighborhood(), address.getState(), address.getCountry(), address.getCep()));
-
-        userRepository.save(user);
-
-        logger.info("User created successfully. userId={}", user.getId());
-
-        return userMapper.convertUserToCreateResponse(user);
+    public void register(UserCreateRequestDTO dto) {
+        buildCreateUserMethod(dto);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public UserCreateResponseDTO create(UserCreateRequestDTO dto) {
+        return buildCreateUserMethod(dto);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public UserDetailsResponseDTO findActiveById(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
@@ -66,6 +60,7 @@ public class UserService {
         return userMapper.convertUserToDetailsResponse(user);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public List<AddressResponseDTO> findAddresses(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
@@ -73,6 +68,7 @@ public class UserService {
         return user.getAddresses().stream().map(userMapper::convertAddressToResponse).toList();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<UserSummaryResponseDTO> search(UserFilterDTO dto, Pageable pageable) {
 
         validateRangeDate(dto.getInitialDateOfDelete(), dto.getFinalDateOfDelete());
@@ -91,10 +87,10 @@ public class UserService {
         spec = spec.and(UserSpecification.wasCreatedAt(dto.getInitialDateOfCreation(),
                 dto.getFinalDateOfCreation()));
 
-
         return userRepository.findAll(spec, pageable).map(userMapper::convertUserToSummaryResponse);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
     public UserDetailsResponseDTO update(Long userId, UserUpdateDTO dto) {
 
@@ -145,6 +141,7 @@ public class UserService {
         return userMapper.convertUserToDetailsResponse(user);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
     public void updatePassword(Long userId, UserUpdatePasswordDTO dto) {
 
@@ -160,6 +157,16 @@ public class UserService {
         logger.info("User password updated successfully. userId={}", userId);
     }
 
+    @PreAuthorize("hasRole('ADMIN') and #userId != authentication.principal.id")
+    public void updateRole(Long userId, UserUpdateRoleDTO dto) {
+
+        User user = getActiveUserOrThrow(userId);
+        user.updateRole(dto.getRole());
+
+        logger.info("Role updated successfully. userId={}", userId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
     public void reactivate(Long userId) {
 
@@ -170,6 +177,7 @@ public class UserService {
         logger.info("User successfully reactivated. userId={}", userId);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
     public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
 
@@ -184,6 +192,7 @@ public class UserService {
         return userMapper.convertAddressToResponse(updatedAddress);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
     public void removeAddress(Long userId, Long addressId) {
 
@@ -193,6 +202,8 @@ public class UserService {
         logger.info("Address removed successfully. userId={}, addressId={}", userId, addressId);
     }
 
+    @PreAuthorize("(hasRole('ADMIN') and #userId != authentication.principal.id) " +
+            "or (hasRole('USER') and #userId == authentication.principal.id)")
     @Transactional
     public void delete(Long userId) {
 
@@ -240,5 +251,21 @@ public class UserService {
         }
     }
 
+    private UserCreateResponseDTO buildCreateUserMethod(UserCreateRequestDTO dto) {
+        validateUserUniquenessOrThrow(dto);
 
+        User user = new User(dto.getName(), dto.getEmail(),
+                dto.getCpf(), dto.getPhoneNumber(),
+                dto.getDateOfBirth(), passwordEncoder.encode(dto.getPassword()));
+
+        dto.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
+                address.getStreetName(), address.getHouseNumber(),
+                address.getNeighborhood(), address.getState(), address.getCountry(), address.getCep()));
+
+        userRepository.save(user);
+
+        logger.info("User created successfully. userId={}", user.getId());
+
+        return userMapper.convertUserToCreateResponse(user);
+    }
 }
