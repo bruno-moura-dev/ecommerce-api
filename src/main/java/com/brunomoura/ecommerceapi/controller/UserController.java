@@ -22,52 +22,52 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserCreateResponseDTO> create(@RequestBody @Valid UserCreateRequestDTO userCreateRequestDTO) {
+    public ResponseEntity<UserCreateResponseDTO> create(@RequestBody @Valid UserCreateRequestDTO dto) {
 
-        UserCreateResponseDTO userCreateResponseDTO = userService.create(userCreateRequestDTO);
+        UserCreateResponseDTO response = userService.create(dto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userCreateResponseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> getById(@PathVariable Long userId) {
 
-        UserDetailsResponseDTO userDetailsResponseDTO = userService.findActiveById(userId);
+        UserDetailsResponseDTO response = userService.findActiveById(userId);
 
-        return ResponseEntity.ok(userDetailsResponseDTO);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}/addresses")
     public ResponseEntity<List<AddressResponseDTO>> getAddresses(@PathVariable Long userId) {
 
-        List<AddressResponseDTO> addressResponseDTOList = userService.findAddresses(userId);
+        List<AddressResponseDTO> response = userService.findAddresses(userId);
 
-        return ResponseEntity.ok(addressResponseDTOList);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserSummaryResponseDTO>> search(@ModelAttribute UserFilterDTO userFilterDTO,
+    public ResponseEntity<Page<UserSummaryResponseDTO>> search(@ModelAttribute UserFilterDTO dto,
                                                                Pageable pageable) {
 
-        Page<UserSummaryResponseDTO> userSummaryResponseDTOPage = userService.search(userFilterDTO, pageable);
+        Page<UserSummaryResponseDTO> response = userService.search(dto, pageable);
 
-        return ResponseEntity.ok(userSummaryResponseDTOPage);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> update(@PathVariable Long userId,
-                                                         @RequestBody @Valid UserUpdateDTO userUpdateDTO) {
+                                                         @RequestBody @Valid UserUpdateDTO dto) {
 
-        UserDetailsResponseDTO userDetailsResponseDTO = userService.update(userId, userUpdateDTO);
+        UserDetailsResponseDTO response = userService.update(userId, dto);
 
-        return ResponseEntity.ok(userDetailsResponseDTO);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> updatePassword(@PathVariable Long userId,
-                                               @RequestBody @Valid UserUpdatePasswordDTO userUpdatePasswordDTO) {
+                                               @RequestBody @Valid UserUpdatePasswordDTO dto) {
 
-        userService.updatePassword(userId, userUpdatePasswordDTO);
+        userService.updatePassword(userId, dto);
 
         return ResponseEntity.noContent().build();
     }
@@ -82,11 +82,11 @@ public class UserController {
 
     @PatchMapping("/{userId}/addresses/{addressId}")
     public ResponseEntity<AddressResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
-                                                            @RequestBody @Valid AddressRequestDTO addressRequestDTO) {
+                                                            @RequestBody @Valid AddressRequestDTO dto) {
 
-        AddressResponseDTO addressResponseDTO = userService.updateAddress(userId, addressId, addressRequestDTO);
+        AddressResponseDTO response = userService.updateAddress(userId, addressId, dto);
 
-        return ResponseEntity.ok(addressResponseDTO);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{userId}/addresses/{addressId}")
