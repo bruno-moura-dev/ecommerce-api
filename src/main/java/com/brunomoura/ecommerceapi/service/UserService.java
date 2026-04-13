@@ -76,7 +76,6 @@ public class UserService {
         validateRangeDate(dto.getInitialDateOfCreation(), dto.getFinalDateOfCreation());
 
         Specification<User> spec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
-
         spec = spec.and(UserSpecification.hasId(dto.getId()));
         spec = spec.and(UserSpecification.hasName(dto.getName()));
         spec = spec.and(UserSpecification.hasCpf(dto.getCpf()));
@@ -101,7 +100,6 @@ public class UserService {
         }
 
         if (dto.getEmail() != null) {
-
             if (!Objects.equals(dto.getEmail(), user.getEmail())) {
 
                 if (userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())) {
@@ -114,10 +112,9 @@ public class UserService {
         }
 
         if (dto.getCpf() != null) {
-
             if (!Objects.equals(dto.getCpf(), user.getCpf())) {
 
-                if (userRepository.existsByCpfAndIdNot(dto.getCpf(), userId)) {
+                if (userRepository.existsByCpfAndIdNot(dto.getCpf(), user.getId())) {
                     throw new BusinessException(ErrorCode.CPF_ALREADY_EXISTS,
                             String.format("User with CPF: %s already exists", dto.getCpf()));
                 }
@@ -127,12 +124,10 @@ public class UserService {
         }
 
         if (dto.getPhoneNumber() != null) {
-
             user.setPhoneNumber(dto.getPhoneNumber());
         }
 
         if (dto.getDateOfBirth() != null) {
-
             user.setDateOfBirth(dto.getDateOfBirth());
         }
 

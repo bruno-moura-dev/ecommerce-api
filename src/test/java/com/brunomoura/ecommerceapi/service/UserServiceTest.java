@@ -3,7 +3,9 @@ package com.brunomoura.ecommerceapi.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +27,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,7 +80,7 @@ public class UserServiceTest {
         @Test
         void shouldCreateUserSuccessfully() {
             UserCreateRequestDTO requestDTO = createValidUserRequest();
-            UserCreateResponseDTO expectedResponse = createExpectedUserResponse();
+            UserCreateResponseDTO expectedResponse = createExpectedUserCreateResponse();
 
             when(userRepository.existsByEmail(requestDTO.getEmail())).thenReturn(false);
             when(userRepository.existsByCpf(requestDTO.getCpf())).thenReturn(false);
@@ -131,7 +138,7 @@ public class UserServiceTest {
         void shouldReturnUserActiveSuccessfully() {
             Long userId = 1L;
             User user = createValidUser();
-            UserDetailsResponseDTO dto = createFindUserResponse();
+            UserDetailsResponseDTO dto = createExpectedUserDetailsResponse();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
             when(userMapper.convertUserToDetailsResponse(user)).thenReturn(dto);
@@ -167,7 +174,7 @@ public class UserServiceTest {
         void shouldReturnAddressesListSuccessfully() {
             Long userId = 1L;
             User user = createValidUser();
-            AddressResponseDTO dto = createAddressResponseDTO();
+            AddressResponseDTO dto = createExpectedAddressResponse();
             Address address = user.getAddresses().iterator().next();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
@@ -183,6 +190,146 @@ public class UserServiceTest {
             assertEquals(dto, addressResponseDTO);
             assertEquals(1, addressResponseList.size());
         }
+    }
+
+    @Nested
+    class SearchUser {
+
+        @Test
+        void shouldThrowBusinessExceptionWhenDateRangeIsInvalid() {
+            UserFilterDTO dto = createInvalidUserFilterDTO();
+            Pageable pageable = PageRequest.of(0, 1);
+
+            BusinessException exception = assertThrows(BusinessException.class,
+                    () -> userService.search(dto, pageable));
+
+            verify(userRepository, never()).findAll();
+            verify(userMapper, never()).convertUserToSummaryResponse(any());
+
+            assertEquals(ErrorCode.INVALID_RANGE_DATE ,exception.getCode());
+        }
+
+        @Test
+        void shouldReturnUserSummaryPageSuccessfully() {
+            UserFilterDTO dto = createValidUserFilterDTO();
+            UserSummaryResponseDTO expectedUserSummary = createExpectedUserSummaryResponse();
+            Pageable pageable = PageRequest.of(0, 10);
+            List<User> userList = createUserList();
+            Page<User> page = new PageImpl<>(userList);
+
+            when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+            when(userMapper.convertUserToSummaryResponse(any())).thenReturn(expectedUserSummary);
+
+            Page<UserSummaryResponseDTO> result = userService.search(dto, pageable);
+
+            verify(userRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+            verify(userMapper, times(userList.size())).convertUserToSummaryResponse(any());
+
+            assertEquals(expectedUserSummary, result.getContent().get(0));
+            assertEquals(userList.size(), result.getNumberOfElements());
+        }
+
+        @Test
+        void shouldReturnEmptyPageWhenNoUsersFound() {
+            UserFilterDTO dto = createValidUserFilterDTO();
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<User> page = new PageImpl<>(List.of());
+
+            when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+
+            Page<UserSummaryResponseDTO> result = userService.search(dto, pageable);
+
+            verify(userRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+            verify(userMapper, never()).convertUserToSummaryResponse(any());
+
+            assertTrue(result.isEmpty());
+            assertTrue(result.getContent().isEmpty());
+        }
+    }
+
+    @Nested
+    class UpdateUser {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            Long userId = 1L;
+            UserUpdateDTO dto = createUpdateUserWithCompleteFields();
+
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
+
+            NotFoundException exception = assertThrows(NotFoundException.class,
+                    () -> userService.update(userId, dto));
+
+            verify(userRepository, never()).existsByEmailAndIdNot(any(), any());
+            verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
+            verify(userMapper, never()).convertUserToDetailsResponse(any());
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowBusinessExceptionWhenEmailAlreadyExists() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdateDTO dto = createUpdateUserWithCompleteFields();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())).thenReturn(true);
+
+            BusinessException exception = assertThrows(BusinessException.class,
+                    () -> userService.update(userId, dto));
+
+            verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
+            verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
+            verify(userMapper, never()).convertUserToDetailsResponse(any());
+
+            assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowBusinessExceptionWhenCpfAlreadyExists() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdateDTO dto = createUpdateUserWithCompleteFields();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())).thenReturn(false);
+            when(userRepository.existsByCpfAndIdNot(dto.getCpf(), user.getId())).thenReturn(true);
+
+            BusinessException exception = assertThrows(BusinessException.class,
+                    () -> userService.update(userId, dto));
+
+            verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
+            verify(userRepository, times(1)).existsByCpfAndIdNot(dto.getCpf(), user.getId());
+            verify(userMapper, never()).convertUserToDetailsResponse(any());
+
+            assertEquals(ErrorCode.CPF_ALREADY_EXISTS, exception.getCode());
+        }
+
+        @Test
+        void shouldUpdateAllFieldsSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdateDTO requestDTO = createUpdateUserWithCompleteFields();
+            UserDetailsResponseDTO expectedResult = expectedUserDetailsResponseAfterUpdateComplete();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.existsByEmailAndIdNot(requestDTO.getEmail(), user.getId())).thenReturn(false);
+            when(userRepository.existsByCpfAndIdNot(requestDTO.getCpf(), user.getId())).thenReturn(false);
+            when(userMapper.convertUserToDetailsResponse(user)).thenReturn(expectedResult);
+
+            UserDetailsResponseDTO result = userService.update(userId, requestDTO);
+
+            verify(userRepository, times(1))
+                    .existsByEmailAndIdNot(requestDTO.getEmail(), user.getId());
+            verify(userRepository, times(1))
+                    .existsByCpfAndIdNot(requestDTO.getCpf(), user.getId());
+            verify(userMapper, times(1)).convertUserToDetailsResponse(user);
+
+            assertEquals(expectedResult, result);
+        }
+
     }
 
 
@@ -231,7 +378,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserCreateResponseDTO createExpectedUserResponse() {
+    private static UserCreateResponseDTO createExpectedUserCreateResponse() {
 
         return new UserCreateResponseDTO(
                 1L,
@@ -241,7 +388,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserDetailsResponseDTO createFindUserResponse() {
+    private static UserDetailsResponseDTO createExpectedUserDetailsResponse() {
 
         return new UserDetailsResponseDTO(
                 1L,
@@ -253,8 +400,7 @@ public class UserServiceTest {
         );
     }
 
-
-    private static AddressResponseDTO createAddressResponseDTO() {
+    private static AddressResponseDTO createExpectedAddressResponse() {
 
         return new AddressResponseDTO(
                 1L,
@@ -268,4 +414,99 @@ public class UserServiceTest {
         );
     }
 
+    private static UserFilterDTO createInvalidUserFilterDTO() {
+        return new UserFilterDTO(
+                1L,
+                "Jorge Antonio Erick",
+                "jorge@email.com.br",
+                "59974321905",
+                UserRole.USER,
+                Instant.now().plusSeconds(3600000),
+                Instant.now(),
+                Instant.now(),
+                Instant.now().plusSeconds(3600000)
+        );
+    }
+
+    private static UserFilterDTO createValidUserFilterDTO() {
+        return new UserFilterDTO(
+                1L,
+                "Jorge Antonio Erick",
+                "jorge@email.com.br",
+                "59974321905",
+                UserRole.USER,
+                Instant.now(),
+                Instant.now().plusSeconds(3600000),
+                Instant.now(),
+                Instant.now().plusSeconds(3600000)
+        );
+    }
+
+    private static List<User> createUserList() {
+        List<User> users = new ArrayList<>();
+        users.add(createValidUser());
+
+        return users;
+    }
+
+    private static UserSummaryResponseDTO createExpectedUserSummaryResponse() {
+
+        return new UserSummaryResponseDTO(
+                1L,
+                "Jorge Antonio Erick",
+                "jorge@email.com.br",
+                "59974321905",
+                "41995925262",
+                LocalDate.of(2000, 10,22),
+                UserRole.USER,
+                null,
+                Instant.now()
+        );
+    }
+
+    private static UserUpdateDTO createUpdateUserWithCompleteFields() {
+
+        return new UserUpdateDTO(
+                "Diego Maradona",
+                "diego@email.com.br",
+                "81380831237",
+                "41995925262",
+                LocalDate.of(2000, 10,22)
+        );
+    }
+
+    private static UserUpdateDTO createUpdateWithOnlyEmailField() {
+
+        return new UserUpdateDTO(
+                null,
+                "diego@email.com.br",
+                null,
+                null,
+                null
+        );
+    }
+
+    private static UserDetailsResponseDTO expectedUserDetailsResponseAfterUpdateComplete() {
+
+        return new UserDetailsResponseDTO(
+                1L,
+                "Diego Maradona",
+                "diego@email.com.br",
+                "81380831237",
+                "41993618252",
+                LocalDate.of(2000, 10,22)
+        );
+    }
+
+    private static UserDetailsResponseDTO jorge() {
+
+        return new UserDetailsResponseDTO(
+                1L,
+                "Diego Maradona",
+                "diego@email.com.br",
+                "81380831237",
+                "41993618252",
+                LocalDate.of(2000, 10,22)
+        );
+    }
 }
