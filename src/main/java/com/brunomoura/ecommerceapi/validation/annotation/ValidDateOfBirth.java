@@ -2,6 +2,7 @@ package com.brunomoura.ecommerceapi.validation.annotation;
 
 import com.brunomoura.ecommerceapi.validation.validator.DateOfBirthValidator;
 import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,5 +18,5 @@ public @interface ValidDateOfBirth {
 
     Class<?>[] groups() default {};
 
-
+    Class<? extends Payload>[] payload() default {};
 }

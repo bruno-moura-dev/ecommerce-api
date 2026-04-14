@@ -1,4 +1,4 @@
-package com.brunomoura.ecommerceapi.security;
+package com.brunomoura.ecommerceapi.security.details;
 
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
@@ -6,8 +6,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {

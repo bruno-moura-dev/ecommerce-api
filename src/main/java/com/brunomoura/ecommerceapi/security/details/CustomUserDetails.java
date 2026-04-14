@@ -1,4 +1,4 @@
-package com.brunomoura.ecommerceapi.security;
+package com.brunomoura.ecommerceapi.security.details;
 
 import com.brunomoura.ecommerceapi.domain.user.User;
 import org.springframework.security.core.GrantedAuthority;

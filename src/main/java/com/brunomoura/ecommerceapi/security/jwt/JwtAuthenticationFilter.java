@@ -1,6 +1,6 @@
 package com.brunomoura.ecommerceapi.security.jwt;
 
-import com.brunomoura.ecommerceapi.security.CustomUserDetailsService;
+import com.brunomoura.ecommerceapi.security.details.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

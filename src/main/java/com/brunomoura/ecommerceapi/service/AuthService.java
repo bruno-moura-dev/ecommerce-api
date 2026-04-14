@@ -4,9 +4,12 @@ import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
-import com.brunomoura.ecommerceapi.security.CustomUserDetailsService;
+import com.brunomoura.ecommerceapi.enums.ErrorCode;
+import com.brunomoura.ecommerceapi.exception.auth.InvalidCredentialsException;
+import com.brunomoura.ecommerceapi.security.details.CustomUserDetailsService;
 import com.brunomoura.ecommerceapi.security.jwt.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -35,11 +38,16 @@ public class AuthService {
                 dto.getPassword()
         );
 
-        Authentication authentication = authenticationManager.authenticate(auth);
+        try {
+            Authentication authentication = authenticationManager.authenticate(auth);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        return generateTokenForUser(userDetails);
+            return generateTokenForUser(userDetails);
+
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password");
+        }
     }
 
     public LoginResponseDTO register(UserCreateRequestDTO dto) {
@@ -58,6 +66,4 @@ public class AuthService {
 
         return new LoginResponseDTO(token, jwtService.extractExpiration(token).toInstant());
     }
-
-
 }
