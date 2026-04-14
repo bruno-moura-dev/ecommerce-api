@@ -2,8 +2,16 @@ package com.brunomoura.ecommerceapi.enums;
 
 public enum ErrorCode {
 
+    // JSON
+    INVALID_REQUEST,
+
     // FIELDS
     INVALID_FIELDS,
+
+    // AUTH
+    INVALID_CREDENTIALS,
+    UNAUTHORIZED,
+    ACCESS_DENIED,
 
     // ADDRESS
     ADDRESS_ALREADY_EXISTS,
@@ -14,7 +22,7 @@ public enum ErrorCode {
     // USER
     CPF_ALREADY_EXISTS,
     EMAIL_ALREADY_EXISTS,
-    INVALID_PASSWORD,
+    INVALID_CURRENT_PASSWORD,
     INVALID_RANGE_DATE,
     INVALID_USER_FIELD,
     USER_DELETED_CANNOT_BE_CHANGED,

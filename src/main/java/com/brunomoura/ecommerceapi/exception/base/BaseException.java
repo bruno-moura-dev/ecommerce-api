@@ -1,4 +1,4 @@
-package com.brunomoura.ecommerceapi.exception;
+package com.brunomoura.ecommerceapi.exception.base;
 
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 

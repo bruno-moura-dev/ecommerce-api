@@ -1,4 +1,4 @@
-package com.brunomoura.ecommerceapi.exception;
+package com.brunomoura.ecommerceapi.exception.model;
 
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import lombok.Getter;
