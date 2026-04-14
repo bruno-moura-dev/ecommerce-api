@@ -29,6 +29,15 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/{userId}/addresses")
+    public ResponseEntity<AddressResponseDTO> addAddress(@PathVariable Long userId,
+                                                         @RequestBody @Valid AddressRequestDTO dto) {
+
+        AddressResponseDTO response = userService.addAddress(userId, dto);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> getById(@PathVariable Long userId) {
 
@@ -72,10 +81,10 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{userId}/reactivate")
-    public ResponseEntity<Void> reactivate(@PathVariable Long userId) {
+    @PatchMapping("/{userId}/update-role")
+    public ResponseEntity<Void> updateRole(@PathVariable Long userId, @RequestBody @Valid UserUpdateRoleDTO dto) {
 
-        userService.reactivate(userId);
+        userService.updateRole(userId, dto);
 
         return ResponseEntity.noContent().build();
     }
@@ -87,6 +96,14 @@ public class UserController {
         AddressResponseDTO response = userService.updateAddress(userId, addressId, dto);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/reactivate")
+    public ResponseEntity<Void> reactivate(@RequestBody @Valid ReactivateUserDTO dto) {
+
+        userService.reactivate(dto);
+
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{userId}/addresses/{addressId}")

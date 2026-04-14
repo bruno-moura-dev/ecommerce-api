@@ -2,10 +2,7 @@ package com.brunomoura.ecommerceapi.mapper;
 
 import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
-import com.brunomoura.ecommerceapi.dto.user.AddressResponseDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserCreateResponseDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserDetailsResponseDTO;
-import com.brunomoura.ecommerceapi.dto.user.UserSummaryResponseDTO;
+import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.utils.formatter.EmailUtils;
 import com.brunomoura.ecommerceapi.utils.formatter.PhoneNumberUtils;
 
@@ -55,7 +52,6 @@ public class UserMapper {
     public AddressResponseDTO convertAddressToResponse(Address address) {
 
         return new AddressResponseDTO(
-                address.getId(),
                 address.getLabel(),
                 address.getStreetName(),
                 address.getHouseNumber(),

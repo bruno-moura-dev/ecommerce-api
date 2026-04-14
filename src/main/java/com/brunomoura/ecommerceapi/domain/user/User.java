@@ -3,8 +3,8 @@ package com.brunomoura.ecommerceapi.domain.user;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import com.brunomoura.ecommerceapi.enums.UserRole;
 
-import com.brunomoura.ecommerceapi.exception.BusinessException;
-import com.brunomoura.ecommerceapi.exception.NotFoundException;
+import com.brunomoura.ecommerceapi.exception.base.BusinessException;
+import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

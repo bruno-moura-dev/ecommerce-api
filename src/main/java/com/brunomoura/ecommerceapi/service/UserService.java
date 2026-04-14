@@ -9,9 +9,9 @@ import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
-import com.brunomoura.ecommerceapi.exception.BusinessException;
-import com.brunomoura.ecommerceapi.exception.InvalidPasswordException;
-import com.brunomoura.ecommerceapi.exception.NotFoundException;
+import com.brunomoura.ecommerceapi.exception.base.BusinessException;
+import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
+import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
 import com.brunomoura.ecommerceapi.specification.UserSpecification;
@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,19 @@ public class UserService {
     @Transactional
     public UserCreateResponseDTO create(UserCreateRequestDTO dto) {
         return buildCreateUserMethod(dto);
+    }
+
+    @PreAuthorize(("hasRole('ADMIN') or #userId == authentication.principal.id"))
+    @Transactional
+    public AddressResponseDTO addAddress(Long userId, AddressRequestDTO dto) {
+        User user = getActiveUserOrThrow(userId);
+
+        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(),
+                dto.getState(), dto.getCountry(), dto.getCep());
+
+        logger.info("Address added successfully. userId={}", userId);
+
+        return userMapper.convertAddressToResponse(address);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -143,7 +157,7 @@ public class UserService {
         User user = getActiveUserOrThrow(userId);
 
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
-            throw new InvalidPasswordException(ErrorCode.INVALID_PASSWORD, "Invalid password");
+            throw new InvalidCurrentPasswordException(ErrorCode.INVALID_CURRENT_PASSWORD, "Invalid current password");
         }
 
         user.changePassword(dto.getNewPassword(),
@@ -163,28 +177,32 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
-    public void reactivate(Long userId) {
-
-        User user = findByIdIncludingDeleted(userId);
-
-        user.activeUser();
-
-        logger.info("User successfully reactivated. userId={}", userId);
-    }
-
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    @Transactional
     public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
 
-        Address updatedAddress = user.updateAddress(addressId, dto.getLabel(), dto.getStreetName(),
+        Address address = user.updateAddress(addressId, dto.getLabel(), dto.getStreetName(),
                 dto.getHouseNumber(), dto.getNeighborhood(), dto.getState(),
                 dto.getCountry(), dto.getCep());
 
         logger.info("Address updated successfully. userId={}, addressId={}", userId, addressId);
 
-        return userMapper.convertAddressToResponse(updatedAddress);
+        return userMapper.convertAddressToResponse(address);
+    }
+
+    @Transactional
+    public void reactivate(ReactivateUserDTO dto) {
+
+        User user = findByEmailIncludingDeleted(dto.getEmail());
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
+            throw new InvalidCurrentPasswordException(ErrorCode.INVALID_CURRENT_PASSWORD,
+                    "Invalid current password");
+        }
+
+        user.activeUser();
+
+        logger.info("User successfully reactivated. userId={}", user.getId());
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -208,6 +226,8 @@ public class UserService {
         logger.info("User soft deleted. userId={}", userId);
     }
 
+
+    // INTERNAL METHODS
     private void validateUserUniquenessOrThrow(UserCreateRequestDTO dto) {
 
         Optional<User> foundUser = userRepository.findByEmailOrCpf(dto.getEmail(),
@@ -228,6 +248,13 @@ public class UserService {
         return userRepository.findActiveById(userId).orElseThrow(
                 () -> new NotFoundException(ErrorCode.USER_NOT_FOUND,
                         String.format("User with id: %d not found", userId)));
+    }
+
+    private User findByEmailIncludingDeleted(String email) {
+
+        return userRepository.findByEmail(email).orElseThrow(
+                () -> new UsernameNotFoundException(String.format("User with email: %s not found.", email))
+        );
     }
 
     private User findByIdIncludingDeleted(Long userId) {

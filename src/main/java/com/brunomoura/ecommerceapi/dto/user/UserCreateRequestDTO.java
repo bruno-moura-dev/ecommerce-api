@@ -19,20 +19,21 @@ public class UserCreateRequestDTO {
     @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters long.")
     private String name;
 
-    @NotBlank(message = "CPF is required.")
-    @CPF(message = "Invalid CPF format.")
-    private String cpf;
-
     @NotBlank(message = "E-mail is required.")
     @Email(message = "Invalid e-mail format.")
     private String email;
+
+    @NotBlank(message = "CPF is required.")
+    @CPF(message = "Invalid CPF format.")
+    private String cpf;
 
     @NotBlank(message = "Phone number is required.")
     @ValidPhoneNumber
     private String phoneNumber;
 
     @NotNull(message = "Date of birth is required.")
-    @ValidDateOfBirth
+    @ValidDateOfBirth(message = "Invalid date of birth. User must be between 18 and 125 years old, " +
+            "and the date cannot be in the future.")
     private LocalDate dateOfBirth;
 
     @NotBlank(message = "Password is required.")
