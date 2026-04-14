@@ -1,7 +1,7 @@
 package com.brunomoura.ecommerceapi.domain.user;
 
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
-import com.brunomoura.ecommerceapi.exception.BusinessException;
+import com.brunomoura.ecommerceapi.exception.base.BusinessException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
