@@ -41,23 +41,38 @@ domain-driven design principles, validation, exception handling, and JWT-based a
 
 1. Clone the repository:
 
+```bash
 git clone https://github.com/bruno-moura-dev/ecommerce-api.git
+```
 
 2. Set environment variables:
 
-ADMIN_EMAIL=admin@test.com\
-ADMIN_PASSWORD=123456\
-JWT_SECRET=ecommerce-api-secret-key-2026\
+```env
+ADMIN_USERNAME=admin@test.com
+ADMIN_PASSWORD=123456
+ADMIN_ROLE=ADMIN
+JWT_SECRET=ecommerce-api-secret-key-2026
 JWT_EXPIRATION=3600000
+
+The admin user is created on application startup using the provided environment variables.
+```
 
 3. Run the application:
 
-./mvnw spring-boot:run\
-Or run directly from your IDE (IntelliJ / Eclipse)
+```bash
+./mvnw spring-boot:run
+```
+
+Or run the main class from your IDE:
+
+```java
+EcommerceApiApplication
+```
 
 4. Access API documentation (Swagger UI):
 
 http://localhost:8080/swagger-ui.html
+
 
 ## API Documentation
 
