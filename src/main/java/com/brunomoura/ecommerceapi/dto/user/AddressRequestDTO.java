@@ -2,10 +2,14 @@ package com.brunomoura.ecommerceapi.dto.user;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class AddressRequestDTO {
 
     @Size(max = 50, message = "Label must be shorter than 50 characters long.")
@@ -21,6 +25,10 @@ public class AddressRequestDTO {
     @Size(max = 60, message = "Neighborhood must be shorter than 60 characters long.")
     private String neighborhood;
 
+    @NotBlank(message = "City is required.")
+    @Size(max = 50, message = "City must be shorter than 50 characters long.")
+    private String city;
+
     @NotBlank(message = "State is required.")
     @Size(max = 50, message = "State must be shorter than 50 characters long.")
     private String state;
@@ -29,6 +37,6 @@ public class AddressRequestDTO {
     @Size(max = 60, message = "Country must be shorter than 60 characters long.")
     private String country;
 
-    @Size(max = 8, message = "CEP must be shorter than 8 digits long.")
-    private String cep;
+    @Size(max = 8, message = "Zip code must be shorter than 8 digits long.")
+    private String zipCode;
 }

@@ -32,13 +32,16 @@ public class Address {
     private String neighborhood;
 
     @Column(length = 50)
+    private String city;
+
+    @Column(length = 50)
     private String state;
 
     @Column(length = 60)
     private String country;
 
     @Column(length = 8)
-    private String cep;
+    private String zipCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -55,61 +58,56 @@ public class Address {
 
     protected Address() {}
 
-     Address(String label, String streetName, String houseNumber, String neighborhood, String state, String country,
-             String cep) {
+     Address(String label, String streetName, String houseNumber, String neighborhood, String city, String state,
+             String country, String zipCode) {
 
         validateField("streetName", streetName);
-        validateField("houseNumber", houseNumber);
-        validateField("neighborhood", neighborhood);
+        validateField("city", city);
         validateField("state", state);
         validateField("country", country);
-        validateField("cep", cep);
 
         this.label = label;
         this.streetName = streetName;
         this.houseNumber = houseNumber;
         this.neighborhood = neighborhood;
+        this.city = city;
         this.state = state;
         this.country = country;
-        this.cep = cep;
+        this.zipCode = zipCode;
     }
 
     void setUser(User user) {
         this.user = user;
     }
-    //endregion
+
+    Address update(AddressUpdate address) {
+
+        if (address.getLabel() != null) {this.label = address.getLabel();}
+        if (address.getStreetName() != null) {this.streetName = address.getStreetName();}
+        if (address.getHouseNumber() != null) {this.houseNumber = address.getHouseNumber();}
+        if (address.getNeighborhood() != null) {this.neighborhood = address.getNeighborhood();}
+        if (address.getCity() != null) {this.city = address.getCity();}
+        if (address.getState() != null) {this.state = address.getState();}
+        if (address.getCountry() != null) {this.country = address.getCountry();}
+        if (address.getZipCode() != null) {this.zipCode = address.getZipCode();}
+
+        return this;
+    }
 
     boolean isSameAddress(Address address) {
         return Objects.equals(this.streetName, address.getStreetName())
                 && Objects.equals(this.houseNumber, address.getHouseNumber())
                 && Objects.equals(this.neighborhood, address.getNeighborhood())
+                && Objects.equals(this.city, address.getCity())
                 && Objects.equals(this.state, address.getState())
                 && Objects.equals(this.country, address.getCountry())
-                && Objects.equals(this.cep, address.getCep());
+                && Objects.equals(this.zipCode, address.getZipCode());
     }
 
     private void validateField(String field ,String value) {
         if (value == null || value.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_ADDRESS_FIELD, "Field must not be null or blank: field="
-            + field);
+                    + field);
         }
-    }
-
-    // Equality is based on address fields (value-based), not on ID.
-    // This allows the Set to prevent duplicate addresses.
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Address address = (Address) o;
-
-        return isSameAddress(address);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.streetName, this.houseNumber, this.neighborhood, this.state, this.country,
-                this.cep);
     }
 }
