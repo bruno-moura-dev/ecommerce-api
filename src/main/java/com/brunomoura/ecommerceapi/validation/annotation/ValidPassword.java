@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = PasswordValidator.class)
 public @interface ValidPassword {
 
-    String message() default "Weak password. The provided password does not meet the minimum security requirements.";
+    String message() default "Weak password. The provided password does not meet the minimum security requirements";
 
     Class<?>[] groups() default {};
 

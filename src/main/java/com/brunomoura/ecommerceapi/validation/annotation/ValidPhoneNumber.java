@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = PhoneNumberValidator.class)
 public @interface ValidPhoneNumber {
 
-    String message() default "Invalid phone number format. Please provide a Brazilian phone number format.";
+    String message() default "Invalid phone number format. Please provide a Brazilian phone number format";
 
     Class<?>[] groups() default {};
 

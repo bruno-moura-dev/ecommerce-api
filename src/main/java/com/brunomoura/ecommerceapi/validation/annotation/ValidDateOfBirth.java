@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 public @interface ValidDateOfBirth {
 
     String message() default "Invalid date of birth. Birth date must be between 18 and 125 years ago " +
-            "and cannot be in the future.";
+            "and cannot be in the future";
 
     Class<?>[] groups() default {};
 
