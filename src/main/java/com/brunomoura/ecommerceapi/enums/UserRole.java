@@ -5,9 +5,7 @@ public enum UserRole {
     ADMIN,
     USER;
 
-    private String authorities;
-
     public String getAuthorities() {
-        return authorities;
+        return "ROLE_" + this.name();
     }
 }
