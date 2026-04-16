@@ -15,8 +15,8 @@ import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import com.brunomoura.ecommerceapi.enums.UserRole;
-import com.brunomoura.ecommerceapi.exception.BusinessException;
-import com.brunomoura.ecommerceapi.exception.NotFoundException;
+import com.brunomoura.ecommerceapi.exception.base.BusinessException;
+import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
 
@@ -79,12 +79,14 @@ public class UserServiceTest {
 
         @Test
         void shouldCreateUserSuccessfully() {
+            User user = createValidUser();
             UserCreateRequestDTO requestDTO = createValidUserRequest();
             UserCreateResponseDTO expectedResponse = createExpectedUserCreateResponse();
 
             when(userRepository.existsByEmail(requestDTO.getEmail())).thenReturn(false);
             when(userRepository.existsByCpf(requestDTO.getCpf())).thenReturn(false);
             when(passwordEncoder.encode(requestDTO.getPassword())).thenReturn("encodedPassword");
+            when(userRepository.save(any())).thenReturn(user);
             when(userMapper.convertUserToCreateResponse(any())).thenReturn(expectedResponse);
 
             UserCreateResponseDTO responseDTO = userService.register(requestDTO);
@@ -95,7 +97,7 @@ public class UserServiceTest {
 
             User savedUser = argumentCaptor.getValue();
 
-            verify(userMapper, times(1)).convertUserToCreateResponse(savedUser);
+            verify(userMapper, times(1)).convertUserToCreateResponse(user);
 
             assertEquals(requestDTO.getName(), savedUser.getName());
             assertEquals(requestDTO.getEmail(), savedUser.getEmail());
@@ -167,27 +169,27 @@ public class UserServiceTest {
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, never()).convertAddressToResponse(any());
+            verify(userMapper, never()).convertAddressToDetailsResponse(any());
         }
 
         @Test
         void shouldReturnAddressesListSuccessfully() {
             Long userId = 1L;
             User user = createValidUser();
-            AddressResponseDTO dto = createExpectedAddressResponse();
+            AddressDetailsResponseDTO dto = createExpectedAddressDetailsResponse();
             Address address = user.getAddresses().iterator().next();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(userMapper.convertAddressToResponse(address)).thenReturn(dto);
+            when(userMapper.convertAddressToDetailsResponse(address)).thenReturn(dto);
 
-            List<AddressResponseDTO> addressResponseList = userService.findAddresses(userId);
+            List<AddressDetailsResponseDTO> addressResponseList = userService.findAddresses(userId);
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(user.getAddresses().size())).convertAddressToResponse(address);
+            verify(userMapper, times(user.getAddresses().size())).convertAddressToDetailsResponse(address);
 
-            AddressResponseDTO addressResponseDTO = addressResponseList.iterator().next();
+            AddressDetailsResponseDTO addressAddResponseDTO = addressResponseList.iterator().next();
 
-            assertEquals(dto, addressResponseDTO);
+            assertEquals(dto, addressAddResponseDTO);
             assertEquals(1, addressResponseList.size());
         }
     }
@@ -197,7 +199,7 @@ public class UserServiceTest {
 
         @Test
         void shouldThrowBusinessExceptionWhenDateRangeIsInvalid() {
-            UserFilterDTO dto = createInvalidUserFilterDTO();
+            UserFilterDTO dto = createInvalidUserFilter();
             Pageable pageable = PageRequest.of(0, 1);
 
             BusinessException exception = assertThrows(BusinessException.class,
@@ -211,7 +213,7 @@ public class UserServiceTest {
 
         @Test
         void shouldReturnUserSummaryPageSuccessfully() {
-            UserFilterDTO dto = createValidUserFilterDTO();
+            UserFilterDTO dto = createValidUserFilter();
             UserSummaryResponseDTO expectedUserSummary = createExpectedUserSummaryResponse();
             Pageable pageable = PageRequest.of(0, 10);
             List<User> userList = createUserList();
@@ -231,7 +233,7 @@ public class UserServiceTest {
 
         @Test
         void shouldReturnEmptyPageWhenNoUsersFound() {
-            UserFilterDTO dto = createValidUserFilterDTO();
+            UserFilterDTO dto = createValidUserFilter();
             Pageable pageable = PageRequest.of(0, 10);
             Page<User> page = new PageImpl<>(List.of());
 
@@ -312,7 +314,7 @@ public class UserServiceTest {
             Long userId = 1L;
             User user = createValidUser();
             UserUpdateDTO requestDTO = createUpdateUserWithCompleteFields();
-            UserDetailsResponseDTO expectedResult = expectedUserDetailsResponseAfterUpdateComplete();
+            UserDetailsResponseDTO expectedResult = createExpectedUserDetailsResponseAfterUpdateComplete();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
             when(userRepository.existsByEmailAndIdNot(requestDTO.getEmail(), user.getId())).thenReturn(false);
@@ -349,6 +351,7 @@ public class UserServiceTest {
                 "Rua Augusto",
                 "2000",
                 "Vila Nova",
+                "Curiuva",
                 "Paraná",
                 "Brasil",
                 "81800-000");
@@ -362,6 +365,7 @@ public class UserServiceTest {
                 "Rua Augusto",
                 "2000",
                 "Vila Nova",
+                "Curiuva",
                 "Paraná",
                 "Brasil",
                 "81800-000"
@@ -400,21 +404,36 @@ public class UserServiceTest {
         );
     }
 
-    private static AddressResponseDTO createExpectedAddressResponse() {
+    private static AddressAddResponseDTO createExpectedAddAddressResponse() {
 
-        return new AddressResponseDTO(
-                1L,
+        return new AddressAddResponseDTO(
                 "Casa",
                 "Rua Augusto",
                 "2000",
                 "Vila Nova",
+                "Curitiba",
                 "Paraná",
                 "Brasil",
                 "81800-000"
         );
     }
 
-    private static UserFilterDTO createInvalidUserFilterDTO() {
+    private static AddressDetailsResponseDTO createExpectedAddressDetailsResponse() {
+
+        return new AddressDetailsResponseDTO(
+                1L,
+                "Rua Augusto",
+                "2000",
+                "Vila Nova",
+                "Curitiba",
+                "City",
+                "Paraná",
+                "Brasil",
+                "81800-000"
+        );
+    }
+
+    private static UserFilterDTO createInvalidUserFilter() {
         return new UserFilterDTO(
                 1L,
                 "Jorge Antonio Erick",
@@ -428,7 +447,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserFilterDTO createValidUserFilterDTO() {
+    private static UserFilterDTO createValidUserFilter() {
         return new UserFilterDTO(
                 1L,
                 "Jorge Antonio Erick",
@@ -486,19 +505,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserDetailsResponseDTO expectedUserDetailsResponseAfterUpdateComplete() {
-
-        return new UserDetailsResponseDTO(
-                1L,
-                "Diego Maradona",
-                "diego@email.com.br",
-                "81380831237",
-                "41993618252",
-                LocalDate.of(2000, 10,22)
-        );
-    }
-
-    private static UserDetailsResponseDTO jorge() {
+    private static UserDetailsResponseDTO createExpectedUserDetailsResponseAfterUpdateComplete() {
 
         return new UserDetailsResponseDTO(
                 1L,
