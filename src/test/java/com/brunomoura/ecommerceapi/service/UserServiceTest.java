@@ -407,6 +407,7 @@ public class UserServiceTest {
     private static AddressAddResponseDTO createExpectedAddAddressResponse() {
 
         return new AddressAddResponseDTO(
+                1L,
                 "Casa",
                 "Rua Augusto",
                 "2000",

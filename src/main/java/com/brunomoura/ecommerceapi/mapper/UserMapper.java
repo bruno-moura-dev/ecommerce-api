@@ -52,6 +52,7 @@ public class UserMapper {
     public AddressAddResponseDTO convertAddressToAddResponse(Address address) {
 
         return new AddressAddResponseDTO(
+                address.getId(),
                 address.getLabel(),
                 address.getStreetName(),
                 address.getHouseNumber(),
