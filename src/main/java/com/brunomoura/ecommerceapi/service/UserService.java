@@ -3,9 +3,9 @@ package com.brunomoura.ecommerceapi.service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.brunomoura.ecommerceapi.domain.user.Address;
+import com.brunomoura.ecommerceapi.domain.user.AddressUpdate;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
@@ -43,8 +43,8 @@ public class UserService {
     }
 
     @Transactional
-    public void register(UserCreateRequestDTO dto) {
-        buildCreateUserMethod(dto);
+    public UserCreateResponseDTO register(UserCreateRequestDTO dto) {
+        return buildCreateUserMethod(dto);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -55,15 +55,15 @@ public class UserService {
 
     @PreAuthorize(("hasRole('ADMIN') or #userId == authentication.principal.id"))
     @Transactional
-    public AddressResponseDTO addAddress(Long userId, AddressRequestDTO dto) {
+    public AddressAddResponseDTO addAddress(Long userId, AddressRequestDTO dto) {
         User user = getActiveUserOrThrow(userId);
 
-        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(),
-                dto.getState(), dto.getCountry(), dto.getCep());
+        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(),
+                dto.getNeighborhood(), dto.getCity(), dto.getState(), dto.getCountry(), dto.getZipCode());
 
         logger.info("Address added successfully. userId={}", userId);
 
-        return userMapper.convertAddressToResponse(address);
+        return userMapper.convertAddressToAddResponse(address);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -75,11 +75,11 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public List<AddressResponseDTO> findAddresses(Long userId) {
+    public List<AddressDetailsResponseDTO> findAddresses(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
 
-        return user.getAddresses().stream().map(userMapper::convertAddressToResponse).toList();
+        return user.getAddresses().stream().map(userMapper::convertAddressToDetailsResponse).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -167,6 +167,7 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('ADMIN') and #userId != authentication.principal.id")
+    @Transactional
     public void updateRole(Long userId, UserUpdateRoleDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
@@ -177,17 +178,20 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     @Transactional
-    public AddressResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
+    public AddressAddResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
 
         User user = getActiveUserOrThrow(userId);
 
-        Address address = user.updateAddress(addressId, dto.getLabel(), dto.getStreetName(),
-                dto.getHouseNumber(), dto.getNeighborhood(), dto.getState(),
-                dto.getCountry(), dto.getCep());
+        AddressUpdate addressUpdate = new AddressUpdate(
+                dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(), dto.getCity(),
+                dto.getState(), dto.getCountry(), dto.getZipCode()
+        );
 
-        logger.info("Address updated successfully. userId={}, addressId={}", userId, addressId);
+        Address address = user.updateAddress(addressId, addressUpdate);
 
-        return userMapper.convertAddressToResponse(address);
+        logger.info("Address updated successfully. userId={}", userId);
+
+        return userMapper.convertAddressToAddResponse(address);
     }
 
     @Transactional
@@ -229,18 +233,12 @@ public class UserService {
 
     // INTERNAL METHODS
     private void validateUserUniquenessOrThrow(UserCreateRequestDTO dto) {
-
-        Optional<User> foundUser = userRepository.findByEmailOrCpf(dto.getEmail(),
-                dto.getCpf());
-
-        foundUser.ifPresent(user -> {
-            if (Objects.equals(user.getEmail(), dto.getEmail())) {
-                throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email already exists");
-            }
-            if (Objects.equals(user.getCpf(), dto.getCpf())) {
-                throw new BusinessException(ErrorCode.CPF_ALREADY_EXISTS, "CPF already exists");
-            }
-        });
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email already exists");
+        }
+        if (userRepository.existsByCpf(dto.getCpf())) {
+            throw new BusinessException(ErrorCode.CPF_ALREADY_EXISTS, "CPF already exists");
+        }
     }
 
     private User getActiveUserOrThrow(Long userId) {
@@ -282,12 +280,12 @@ public class UserService {
 
         dto.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
                 address.getStreetName(), address.getHouseNumber(),
-                address.getNeighborhood(), address.getState(), address.getCountry(), address.getCep()));
+                address.getNeighborhood(), address.getCity(), address.getState(), address.getCountry(), address.getZipCode()));
 
-        userRepository.save(user);
+        User userSaved = userRepository.save(user);
 
-        logger.info("User created successfully. userId={}", user.getId());
+        logger.info("User created successfully. userId={}", userSaved.getId());
 
-        return userMapper.convertUserToCreateResponse(user);
+        return userMapper.convertUserToCreateResponse(userSaved);
     }
 }

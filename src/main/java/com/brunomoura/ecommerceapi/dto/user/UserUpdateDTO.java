@@ -20,6 +20,7 @@ public class UserUpdateDTO {
     private String name;
 
     @Email(message = "Invalid e-mail format.")
+    @Size(min = 1, message = "Invalid email format.")
     private String email;
 
     @CPF(message = "Invalid CPF format.")

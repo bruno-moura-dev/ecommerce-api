@@ -49,15 +49,31 @@ public class UserMapper {
         );
     }
 
-    public AddressResponseDTO convertAddressToResponse(Address address) {
+    public AddressAddResponseDTO convertAddressToAddResponse(Address address) {
 
-        return new AddressResponseDTO(
+        return new AddressAddResponseDTO(
                 address.getLabel(),
                 address.getStreetName(),
                 address.getHouseNumber(),
                 address.getNeighborhood(),
+                address.getCity(),
                 address.getState(),
                 address.getCountry(),
-                address.getCep());
+                address.getZipCode());
     }
+
+    public AddressDetailsResponseDTO convertAddressToDetailsResponse(Address address) {
+
+        return new AddressDetailsResponseDTO(
+                address.getId(),
+                address.getLabel(),
+                address.getStreetName(),
+                address.getHouseNumber(),
+                address.getNeighborhood(),
+                address.getCity(),
+                address.getState(),
+                address.getCountry(),
+                address.getZipCode());
+    }
+
 }

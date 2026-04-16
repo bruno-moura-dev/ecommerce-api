@@ -80,16 +80,16 @@ public class User {
                 String passwordHash) {
 
         validateStringField("name", name);
-        validateStringField("cpf", cpf);
         validateStringField("email", email);
+        validateStringField("cpf", cpf);
         validateStringField("phoneNumber", phoneNumber);
         validateDateOfBirth(dateOfBirth);
         validateStringField("passwordHash", passwordHash);
         validatePasswordAgainstEmail(passwordHash);
 
         this.name = name;
-        this.cpf = cpf;
         this.email = email.toLowerCase();
+        this.cpf = cpf;
         this.phoneNumber = phoneNumber;
         this.dateOfBirth = dateOfBirth;
         this.passwordHash = passwordHash;
@@ -136,17 +136,27 @@ public class User {
     }
 
     // Ensures address uniqueness within the aggregate based on value equality.
-    public Address addAddress(String label, String streetName, String houseNumber, String neighborhood, String state,
-                              String country, String cep) {
+    public Address addAddress(String label,
+                              String streetName,
+                              String houseNumber,
+                              String neighborhood,
+                              String city,
+                              String state,
+                              String country,
+                              String zipCode) {
         ensuresUserActive();
 
-        Address newAddress = new Address(label, streetName, houseNumber, neighborhood, state, country, cep);
+        Address newAddress = new Address(
+                        label,
+                        streetName,
+                        houseNumber,
+                        neighborhood,
+                        city,
+                        state,
+                        country,
+                        zipCode);
 
-        Optional<Address> foundAddress = findSameAddress(newAddress);
-
-        if (foundAddress.isPresent()) {
-            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
-        }
+        validateDuplicateAddress(newAddress);
 
         return addAddressInternal(newAddress);
     }
@@ -166,37 +176,40 @@ public class User {
     }
 
     // Prevents duplicate addresses and ensures idempotent updates.
-    public Address updateAddress(Long id, String label, String streetName, String houseNumber, String neighborhood,
-                                 String state, String country, String cep) {
+    public Address updateAddress(Long addressId, AddressUpdate update) {
         ensuresUserActive();
+        validateDuplicateAddressOnUpdate(addressId, update);
 
-        Address address = new Address(
-                label, streetName, houseNumber, neighborhood, state, country, cep);
+        Address addressFound = findAddress(addressId);
 
-        Optional<Address> foundAddress = findSameAddress(address);
-
-        if (foundAddress.isPresent()) {
-
-            if (foundAddress.get().getId().equals(id)) {
-                // No-op: same address, no state change required
-                 return foundAddress.get();
-            } else {
-                throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS ,"Address already exists.");
-            }
-        } else {
-            // Add first to ensure the user is never left without an address.
-            // This avoids violating the "at least one address" business rule.
-            Address newAddress = addAddress(label, streetName, houseNumber, neighborhood, state, country, cep);
-            removeAddress(id);
-
-            return newAddress;
-        }
+        return addressFound.update(update);
     }
 
     // Searches for an address using value-based equality. (not by ID)
     // Using to enforce uniqueness within the aggregate.
-    private Optional<Address> findSameAddress(Address otherAddress) {
-        return this.addresses.stream().filter(address -> address.isSameAddress(otherAddress)).findFirst();
+    private void validateDuplicateAddress(Address otherAddress) {
+        
+        if (this.addresses.stream().anyMatch(address -> address.isSameAddress(otherAddress))) {
+            
+            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
+        }
+    }
+
+    private void validateDuplicateAddressOnUpdate(Long addressId, AddressUpdate update) {
+
+        boolean exists = this.addresses.stream()
+                .filter(address -> !address.getId().equals(addressId))
+                .anyMatch(address -> Objects.equals(update.getStreetName(), address.getStreetName())
+                        && Objects.equals(update.getHouseNumber(), address.getHouseNumber())
+                        && Objects.equals(update.getNeighborhood(), address.getNeighborhood())
+                        && Objects.equals(update.getCity(), address.getCity())
+                        && Objects.equals(update.getState(), address.getState())
+                        && Objects.equals(update.getCountry(), address.getCountry())
+                        && Objects.equals(update.getZipCode(), address.getZipCode()));
+
+        if (exists) {
+            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
+        }
     }
 
     private Address findAddress(Long id) {
@@ -226,7 +239,7 @@ public class User {
 
     private void validateDateOfBirth(LocalDate dateValue) {
         if (dateValue == null) {
-            throw new BusinessException(ErrorCode.INVALID_USER_FIELD,
+            throw new BusinessException(ErrorCode.INVALID_DATE_OF_BIRTH,
                     "Invalid user. Field: dateOfBirth cannot be null or blank.");
         }
 

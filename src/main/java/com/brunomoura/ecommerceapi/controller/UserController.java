@@ -30,10 +30,10 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/addresses")
-    public ResponseEntity<AddressResponseDTO> addAddress(@PathVariable Long userId,
-                                                         @RequestBody @Valid AddressRequestDTO dto) {
+    public ResponseEntity<AddressAddResponseDTO> addAddress(@PathVariable Long userId,
+                                                            @RequestBody @Valid AddressRequestDTO dto) {
 
-        AddressResponseDTO response = userService.addAddress(userId, dto);
+        AddressAddResponseDTO response = userService.addAddress(userId, dto);
 
         return ResponseEntity.ok(response);
     }
@@ -47,9 +47,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/addresses")
-    public ResponseEntity<List<AddressResponseDTO>> getAddresses(@PathVariable Long userId) {
+    public ResponseEntity<List<AddressDetailsResponseDTO>> getAddresses(@PathVariable Long userId) {
 
-        List<AddressResponseDTO> response = userService.findAddresses(userId);
+        List<AddressDetailsResponseDTO> response = userService.findAddresses(userId);
 
         return ResponseEntity.ok(response);
     }
@@ -90,10 +90,10 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}/addresses/{addressId}")
-    public ResponseEntity<AddressResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
-                                                            @RequestBody @Valid AddressRequestDTO dto) {
+    public ResponseEntity<AddressAddResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
+                                                               @RequestBody @Valid AddressRequestDTO dto) {
 
-        AddressResponseDTO response = userService.updateAddress(userId, addressId, dto);
+        AddressAddResponseDTO response = userService.updateAddress(userId, addressId, dto);
 
         return ResponseEntity.ok(response);
     }
