@@ -9,6 +9,7 @@ import com.brunomoura.ecommerceapi.domain.user.AddressUpdate;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
+import com.brunomoura.ecommerceapi.exception.auth.InvalidCredentialsException;
 import com.brunomoura.ecommerceapi.exception.base.BusinessException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
 import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
@@ -53,7 +54,7 @@ public class UserService {
         return buildCreateUserMethod(dto);
     }
 
-    @PreAuthorize(("hasRole('ADMIN') or #userId == authentication.principal.id"))
+    @PreAuthorize(("hasRole('ADMIN') or #userId == principal.id"))
     @Transactional
     public AddressAddResponseDTO addAddress(Long userId, AddressRequestDTO dto) {
         User user = getActiveUserOrThrow(userId);
@@ -66,7 +67,7 @@ public class UserService {
         return userMapper.convertAddressToAddResponse(address);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
     public UserDetailsResponseDTO findActiveById(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
@@ -74,7 +75,7 @@ public class UserService {
         return userMapper.convertUserToDetailsResponse(user);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
     public List<AddressDetailsResponseDTO> findAddresses(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
@@ -166,7 +167,7 @@ public class UserService {
         logger.info("User password updated successfully. userId={}", userId);
     }
 
-    @PreAuthorize("hasRole('ADMIN') and #userId != authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') and #userId != principal.id")
     @Transactional
     public void updateRole(Long userId, UserUpdateRoleDTO dto) {
 
@@ -176,7 +177,7 @@ public class UserService {
         logger.info("Role updated successfully. userId={}", userId);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
     @Transactional
     public AddressAddResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
 
@@ -200,8 +201,8 @@ public class UserService {
         User user = findByEmailIncludingDeleted(dto.getEmail());
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
-            throw new InvalidCurrentPasswordException(ErrorCode.INVALID_CURRENT_PASSWORD,
-                    "Invalid current password");
+            throw new InvalidCredentialsException(ErrorCode.INVALID_CREDENTIALS,
+                    "Invalid email or password");
         }
 
         user.activeUser();
@@ -209,7 +210,7 @@ public class UserService {
         logger.info("User successfully reactivated. userId={}", user.getId());
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
     @Transactional
     public void removeAddress(Long userId, Long addressId) {
 
@@ -251,7 +252,7 @@ public class UserService {
     private User findByEmailIncludingDeleted(String email) {
 
         return userRepository.findByEmail(email).orElseThrow(
-                () -> new UsernameNotFoundException(String.format("User with email: %s not found.", email))
+                () -> new UsernameNotFoundException(String.format("User with email: %s not found", email))
         );
     }
 

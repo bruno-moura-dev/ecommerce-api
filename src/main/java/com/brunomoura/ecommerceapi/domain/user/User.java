@@ -169,7 +169,7 @@ public class User {
         // Prevents address must contain one address at least
         if (this.addresses.size() < 2) {
             throw new BusinessException(ErrorCode.LAST_ADDRESS_REMOVAL_NOT_ALLOWED,
-                    "Addresses must contain one address at least.");
+                    "Addresses must contain one address at least");
         }
 
         this.addresses.remove(foundAddress);
@@ -191,7 +191,7 @@ public class User {
         
         if (this.addresses.stream().anyMatch(address -> address.isSameAddress(otherAddress))) {
             
-            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
+            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists");
         }
     }
 
@@ -208,7 +208,7 @@ public class User {
                         && Objects.equals(update.getZipCode(), address.getZipCode()));
 
         if (exists) {
-            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists.");
+            throw new BusinessException(ErrorCode.ADDRESS_ALREADY_EXISTS, "Address already exists");
         }
     }
 
@@ -217,7 +217,7 @@ public class User {
                 .findFirst();
 
         if (findAddress.isEmpty()) {
-            throw new NotFoundException(ErrorCode.ADDRESS_NOT_FOUND,"Address not found.");
+            throw new NotFoundException(ErrorCode.ADDRESS_NOT_FOUND,"Address not found");
         }
 
         return findAddress.get();
@@ -233,14 +233,14 @@ public class User {
     private void validateStringField(String field, String value) {
         if (value == null || value.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_USER_FIELD,
-                    String.format("Invalid user. Field: %s cannot be null or blank.", field));
+                    String.format("Invalid user. Field: %s cannot be null or blank", field));
         }
     }
 
     private void validateDateOfBirth(LocalDate dateValue) {
         if (dateValue == null) {
             throw new BusinessException(ErrorCode.INVALID_DATE_OF_BIRTH,
-                    "Invalid user. Field: dateOfBirth cannot be null or blank.");
+                    "Invalid user. Field: dateOfBirth cannot be null or blank");
         }
 
         LocalDate currentDate = LocalDate.now();
@@ -249,17 +249,17 @@ public class User {
 
         if (dateValue.isAfter(currentDate)) {
             throw new BusinessException(ErrorCode.INVALID_RANGE_DATE ,"Invalid user. " +
-                    "Field: dateOfBirth cannot be in the future.");
+                    "Field: dateOfBirth cannot be in the future");
         }
 
         if (dateValue.isBefore(maxBirthDate)) {
             throw new BusinessException(ErrorCode.INVALID_RANGE_DATE,
-                    "Invalid user. Field: dateOfBirth violates the maximum age constraint (125 years).");
+                    "Invalid user. Field: dateOfBirth violates the maximum age constraint (125 years)");
         }
 
         if (dateValue.isAfter(minBirthDate)) {
             throw new BusinessException(ErrorCode.INVALID_RANGE_DATE,
-                    "Invalid user. Field: dateOfBirth violates the minimum age constraint (18 years).");
+                    "Invalid user. Field: dateOfBirth violates the minimum age constraint (18 years)");
         }
     }
 
@@ -267,7 +267,7 @@ public class User {
 
         if (Objects.equals(password.toLowerCase(), this.email)) {
             throw new BusinessException(ErrorCode.WEAK_PASSWORD,
-                    "Weak password. The provided password does not meet the minimum security requirements.");
+                    "Weak password. The provided password does not meet the minimum security requirements");
         }
     }
 
@@ -275,7 +275,7 @@ public class User {
 
         if (this.deletedAt != null) {
             throw new BusinessException(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED,
-                    "Users deleted cannot be changed.");
+                    "Users deleted cannot be changed");
         }
     }
 
