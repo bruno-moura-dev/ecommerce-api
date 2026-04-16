@@ -1,6 +1,5 @@
 package com.brunomoura.ecommerceapi.dto.user;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +14,6 @@ public class AddressRequestDTO {
     @Size(max = 50, message = "Label must be shorter than 50 characters long.")
     private String label;
 
-    @NotBlank(message = "Street name is required.")
     @Size(max = 100, message = "Street name must be shorter than 100 characters long.")
     private String streetName;
 
@@ -25,15 +23,12 @@ public class AddressRequestDTO {
     @Size(max = 60, message = "Neighborhood must be shorter than 60 characters long.")
     private String neighborhood;
 
-    @NotBlank(message = "City is required.")
     @Size(max = 50, message = "City must be shorter than 50 characters long.")
     private String city;
 
-    @NotBlank(message = "State is required.")
     @Size(max = 50, message = "State must be shorter than 50 characters long.")
     private String state;
 
-    @NotBlank(message = "Country is required.")
     @Size(max = 60, message = "Country must be shorter than 60 characters long.")
     private String country;
 

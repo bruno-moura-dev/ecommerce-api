@@ -83,12 +83,23 @@ public class Address {
     Address update(AddressUpdate address) {
 
         if (address.getLabel() != null) {this.label = address.getLabel();}
-        if (address.getStreetName() != null) {this.streetName = address.getStreetName();}
+        if (address.getStreetName() != null) {
+            validateField("streetName", address.getStreetName());
+            this.streetName = address.getStreetName();
+        }
         if (address.getHouseNumber() != null) {this.houseNumber = address.getHouseNumber();}
         if (address.getNeighborhood() != null) {this.neighborhood = address.getNeighborhood();}
-        if (address.getCity() != null) {this.city = address.getCity();}
-        if (address.getState() != null) {this.state = address.getState();}
-        if (address.getCountry() != null) {this.country = address.getCountry();}
+        if (address.getCity() != null) {
+            validateField("city", address.getCity());
+            this.city = address.getCity();
+        }
+        if (address.getState() != null) {
+            validateField("state", address.getState());
+            this.state = address.getState();}
+        if (address.getCountry() != null) {
+            validateField("country", address.getCountry());
+            this.country = address.getCountry();
+        }
         if (address.getZipCode() != null) {this.zipCode = address.getZipCode();}
 
         return this;
