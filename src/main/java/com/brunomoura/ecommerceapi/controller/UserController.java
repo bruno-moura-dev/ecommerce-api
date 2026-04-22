@@ -2,7 +2,10 @@ package com.brunomoura.ecommerceapi.controller;
 
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Create a new user")
     @PostMapping
     public ResponseEntity<UserCreateResponseDTO> create(@RequestBody @Valid UserCreateRequestDTO dto) {
 
@@ -29,6 +33,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Add address to user")
     @PostMapping("/{userId}/addresses")
     public ResponseEntity<AddressAddResponseDTO> addAddress(@PathVariable Long userId,
                                                             @RequestBody @Valid AddressRequestDTO dto) {
@@ -38,6 +43,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get active user by ID")
     @GetMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> getById(@PathVariable Long userId) {
 
@@ -46,6 +52,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get user addresses")
     @GetMapping("/{userId}/addresses")
     public ResponseEntity<List<AddressDetailsResponseDTO>> getAddresses(@PathVariable Long userId) {
 
@@ -54,6 +61,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Search users with filters and pagination")
     @GetMapping
     public ResponseEntity<Page<UserSummaryResponseDTO>> search(@ModelAttribute UserFilterDTO dto,
                                                                Pageable pageable) {
@@ -63,6 +71,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Update user")
     @PatchMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> update(@PathVariable Long userId,
                                                          @RequestBody @Valid UserUpdateDTO dto) {
@@ -72,6 +81,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Update user password")
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> updatePassword(@PathVariable Long userId,
                                                @RequestBody @Valid UserUpdatePasswordDTO dto) {
@@ -81,6 +91,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Update user role")
     @PatchMapping("/{userId}/update-role")
     public ResponseEntity<Void> updateRole(@PathVariable Long userId, @RequestBody @Valid UserUpdateRoleDTO dto) {
 
@@ -89,6 +100,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Update user address")
     @PatchMapping("/{userId}/addresses/{addressId}")
     public ResponseEntity<AddressAddResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
                                                                @RequestBody @Valid AddressRequestDTO dto) {
@@ -98,6 +110,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Reactivate a previously deactivated user")
     @PatchMapping("/reactivate")
     public ResponseEntity<Void> reactivate(@RequestBody @Valid ReactivateUserDTO dto) {
 
@@ -106,6 +119,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Delete user address")
     @DeleteMapping("/{userId}/addresses/{addressId}")
     public ResponseEntity<Void> removeAddress(@PathVariable Long userId, @PathVariable Long addressId) {
 
@@ -114,6 +128,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Delete user")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> delete(@PathVariable Long userId) {
 
