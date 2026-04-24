@@ -64,7 +64,7 @@ public class UserService {
 
         logger.info("Address added successfully. userId={}", userId);
 
-        return userMapper.convertAddressToAddResponse(address);
+        return userMapper.toAddressResponse(address);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
@@ -72,7 +72,7 @@ public class UserService {
 
         User user = getActiveUserOrThrow(userId);
 
-        return userMapper.convertUserToDetailsResponse(user);
+        return userMapper.toUserDetailsResponse(user);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
@@ -80,7 +80,7 @@ public class UserService {
 
         User user = getActiveUserOrThrow(userId);
 
-        return user.getAddresses().stream().map(userMapper::convertAddressToDetailsResponse).toList();
+        return user.getAddresses().stream().map(userMapper::toAddressDetailsResponse).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,7 +101,7 @@ public class UserService {
         spec = spec.and(UserSpecification.wasCreatedAt(dto.getInitialDateOfCreation(),
                 dto.getFinalDateOfCreation()));
 
-        return userRepository.findAll(spec, pageable).map(userMapper::convertUserToSummaryResponse);
+        return userRepository.findAll(spec, pageable).map(userMapper::toSummaryResponse);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -148,7 +148,7 @@ public class UserService {
 
         logger.info("User updated successfully. userId={}", userId);
 
-        return userMapper.convertUserToDetailsResponse(user);
+        return userMapper.toUserDetailsResponse(user);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -192,7 +192,7 @@ public class UserService {
 
         logger.info("Address updated successfully. userId={}", userId);
 
-        return userMapper.convertAddressToAddResponse(address);
+        return userMapper.toAddressResponse(address);
     }
 
     @Transactional
@@ -287,6 +287,6 @@ public class UserService {
 
         logger.info("User created successfully. userId={}", userSaved.getId());
 
-        return userMapper.convertUserToCreateResponse(userSaved);
+        return userMapper.toCreateResponse(userSaved);
     }
 }

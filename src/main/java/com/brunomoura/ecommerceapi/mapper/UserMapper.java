@@ -6,75 +6,36 @@ import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.utils.formatter.EmailUtils;
 import com.brunomoura.ecommerceapi.utils.formatter.PhoneNumberUtils;
 
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
-    public UserCreateResponseDTO convertUserToCreateResponse(User user) {
+    @Mapping(source = "email", target = "email", qualifiedByName = "maskEmail")
+    @Mapping(source = "phoneNumber", target = "phoneNumber", qualifiedByName = "maskPhoneNumber")
+    UserCreateResponseDTO toCreateResponse(User user);
 
-        return new UserCreateResponseDTO(
-                user.getId(),
-                user.getName(),
-                EmailUtils.maskEmail(user.getEmail()),
-                PhoneNumberUtils.maskPhoneNumber(user.getPhoneNumber())
-        );
+    UserDetailsResponseDTO toUserDetailsResponse(User user);
+
+    UserSummaryResponseDTO toSummaryResponse(User user);
+
+    AddressAddResponseDTO toAddressResponse(Address address);
+
+    AddressDetailsResponseDTO toAddressDetailsResponse(Address address);
+
+
+    @Named("maskEmail")
+    default String maskEmail(String email) {
+
+        return EmailUtils.maskEmail(email);
     }
 
-    public UserDetailsResponseDTO convertUserToDetailsResponse(User user) {
+    @Named("maskPhoneNumber")
+    default String maskPhoneNumber(String phoneNumber) {
 
-        return new UserDetailsResponseDTO(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCpf(),
-                user.getPhoneNumber(),
-                user.getDateOfBirth()
-        );
+        return PhoneNumberUtils.maskPhoneNumber(phoneNumber);
     }
-
-    public UserSummaryResponseDTO convertUserToSummaryResponse(User user) {
-
-        return new UserSummaryResponseDTO(
-                user.getId(),
-                user.getName(),
-                user.getCpf(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getDateOfBirth(),
-                user.getRole(),
-                user.getDeletedAt(),
-                user.getCreatedAt()
-        );
-    }
-
-    public AddressAddResponseDTO convertAddressToAddResponse(Address address) {
-
-        return new AddressAddResponseDTO(
-                address.getId(),
-                address.getLabel(),
-                address.getStreetName(),
-                address.getHouseNumber(),
-                address.getNeighborhood(),
-                address.getCity(),
-                address.getState(),
-                address.getCountry(),
-                address.getZipCode());
-    }
-
-    public AddressDetailsResponseDTO convertAddressToDetailsResponse(Address address) {
-
-        return new AddressDetailsResponseDTO(
-                address.getId(),
-                address.getLabel(),
-                address.getStreetName(),
-                address.getHouseNumber(),
-                address.getNeighborhood(),
-                address.getCity(),
-                address.getState(),
-                address.getCountry(),
-                address.getZipCode());
-    }
-
 }

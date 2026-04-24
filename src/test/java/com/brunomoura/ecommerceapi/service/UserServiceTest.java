@@ -87,7 +87,7 @@ public class UserServiceTest {
             when(userRepository.existsByCpf(requestDTO.getCpf())).thenReturn(false);
             when(passwordEncoder.encode(requestDTO.getPassword())).thenReturn("encodedPassword");
             when(userRepository.save(any())).thenReturn(user);
-            when(userMapper.convertUserToCreateResponse(any())).thenReturn(expectedResponse);
+            when(userMapper.toCreateResponse(any())).thenReturn(expectedResponse);
 
             UserCreateResponseDTO responseDTO = userService.register(requestDTO);
 
@@ -97,7 +97,7 @@ public class UserServiceTest {
 
             User savedUser = argumentCaptor.getValue();
 
-            verify(userMapper, times(1)).convertUserToCreateResponse(user);
+            verify(userMapper, times(1)).toCreateResponse(user);
 
             assertEquals(requestDTO.getName(), savedUser.getName());
             assertEquals(requestDTO.getEmail(), savedUser.getEmail());
@@ -133,7 +133,7 @@ public class UserServiceTest {
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, never()).convertUserToDetailsResponse(any());
+            verify(userMapper, never()).toUserDetailsResponse(any());
         }
 
         @Test
@@ -143,12 +143,12 @@ public class UserServiceTest {
             UserDetailsResponseDTO dto = createExpectedUserDetailsResponse();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(userMapper.convertUserToDetailsResponse(user)).thenReturn(dto);
+            when(userMapper.toUserDetailsResponse(user)).thenReturn(dto);
 
             UserDetailsResponseDTO responseDTO = userService.findActiveById(userId);
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(1)).convertUserToDetailsResponse(user);
+            verify(userMapper, times(1)).toUserDetailsResponse(user);
 
             assertEquals(dto, responseDTO);
         }
@@ -169,7 +169,7 @@ public class UserServiceTest {
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, never()).convertAddressToDetailsResponse(any());
+            verify(userMapper, never()).toAddressDetailsResponse(any());
         }
 
         @Test
@@ -180,12 +180,12 @@ public class UserServiceTest {
             Address address = user.getAddresses().iterator().next();
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(userMapper.convertAddressToDetailsResponse(address)).thenReturn(dto);
+            when(userMapper.toAddressDetailsResponse(address)).thenReturn(dto);
 
             List<AddressDetailsResponseDTO> addressResponseList = userService.findAddresses(userId);
 
             verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(user.getAddresses().size())).convertAddressToDetailsResponse(address);
+            verify(userMapper, times(user.getAddresses().size())).toAddressDetailsResponse(address);
 
             AddressDetailsResponseDTO addressAddResponseDTO = addressResponseList.iterator().next();
 
@@ -206,7 +206,7 @@ public class UserServiceTest {
                     () -> userService.search(dto, pageable));
 
             verify(userRepository, never()).findAll();
-            verify(userMapper, never()).convertUserToSummaryResponse(any());
+            verify(userMapper, never()).toSummaryResponse(any());
 
             assertEquals(ErrorCode.INVALID_RANGE_DATE ,exception.getCode());
         }
@@ -220,12 +220,12 @@ public class UserServiceTest {
             Page<User> page = new PageImpl<>(userList);
 
             when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
-            when(userMapper.convertUserToSummaryResponse(any())).thenReturn(expectedUserSummary);
+            when(userMapper.toSummaryResponse(any())).thenReturn(expectedUserSummary);
 
             Page<UserSummaryResponseDTO> result = userService.search(dto, pageable);
 
             verify(userRepository, times(1)).findAll(any(Specification.class), eq(pageable));
-            verify(userMapper, times(userList.size())).convertUserToSummaryResponse(any());
+            verify(userMapper, times(userList.size())).toSummaryResponse(any());
 
             assertEquals(expectedUserSummary, result.getContent().get(0));
             assertEquals(userList.size(), result.getNumberOfElements());
@@ -242,7 +242,7 @@ public class UserServiceTest {
             Page<UserSummaryResponseDTO> result = userService.search(dto, pageable);
 
             verify(userRepository, times(1)).findAll(any(Specification.class), eq(pageable));
-            verify(userMapper, never()).convertUserToSummaryResponse(any());
+            verify(userMapper, never()).toSummaryResponse(any());
 
             assertTrue(result.isEmpty());
             assertTrue(result.getContent().isEmpty());
@@ -265,7 +265,7 @@ public class UserServiceTest {
 
             verify(userRepository, never()).existsByEmailAndIdNot(any(), any());
             verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
-            verify(userMapper, never()).convertUserToDetailsResponse(any());
+            verify(userMapper, never()).toUserDetailsResponse(any());
 
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
         }
@@ -284,7 +284,7 @@ public class UserServiceTest {
 
             verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
             verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
-            verify(userMapper, never()).convertUserToDetailsResponse(any());
+            verify(userMapper, never()).toUserDetailsResponse(any());
 
             assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, exception.getCode());
         }
@@ -304,7 +304,7 @@ public class UserServiceTest {
 
             verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
             verify(userRepository, times(1)).existsByCpfAndIdNot(dto.getCpf(), user.getId());
-            verify(userMapper, never()).convertUserToDetailsResponse(any());
+            verify(userMapper, never()).toUserDetailsResponse(any());
 
             assertEquals(ErrorCode.CPF_ALREADY_EXISTS, exception.getCode());
         }
@@ -319,7 +319,7 @@ public class UserServiceTest {
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
             when(userRepository.existsByEmailAndIdNot(requestDTO.getEmail(), user.getId())).thenReturn(false);
             when(userRepository.existsByCpfAndIdNot(requestDTO.getCpf(), user.getId())).thenReturn(false);
-            when(userMapper.convertUserToDetailsResponse(user)).thenReturn(expectedResult);
+            when(userMapper.toUserDetailsResponse(user)).thenReturn(expectedResult);
 
             UserDetailsResponseDTO result = userService.update(userId, requestDTO);
 
@@ -327,7 +327,7 @@ public class UserServiceTest {
                     .existsByEmailAndIdNot(requestDTO.getEmail(), user.getId());
             verify(userRepository, times(1))
                     .existsByCpfAndIdNot(requestDTO.getCpf(), user.getId());
-            verify(userMapper, times(1)).convertUserToDetailsResponse(user);
+            verify(userMapper, times(1)).toUserDetailsResponse(user);
 
             assertEquals(expectedResult, result);
         }
