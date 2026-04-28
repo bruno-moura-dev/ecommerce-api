@@ -15,8 +15,10 @@ import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import com.brunomoura.ecommerceapi.enums.UserRole;
+import com.brunomoura.ecommerceapi.exception.base.BaseException;
 import com.brunomoura.ecommerceapi.exception.base.BusinessException;
 import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
+import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
 
@@ -334,9 +336,80 @@ public class UserServiceTest {
 
     }
 
+    @Nested
+    class UpdatePassword {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            Long userId = 1L;
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
+
+            BaseException exception = assertThrows(NotFoundException.class, () ->
+                    userService.updatePassword(userId, any()));
+
+            verify(passwordEncoder, never()).matches(any(), any());
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowInvalidCurrentPasswordWhenPasswordsDontMatch() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdatePasswordDTO dto = createMismatchUpdatePasswordRequest();
+
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(dto.getCurrentPassword(), dto.getNewPassword())).thenReturn(false);
+
+            BaseException exception = assertThrows(InvalidCurrentPasswordException.class, () ->
+                    userService.updatePassword(userId, dto));
+
+            verify(passwordEncoder, never()).encode(any());
+
+            assertEquals(ErrorCode.INVALID_CURRENT_PASSWORD, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+            Long userId = 1L;
+            User user = createValidUser();
+            user.deleteUser();
+            UserUpdatePasswordDTO dto = createMismatchUpdatePasswordRequest();
+
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(dto.getCurrentPassword(), dto.getNewPassword())).thenReturn(true);
+
+            BaseException exception = assertThrows(BusinessException.class, () ->
+                    userService.updatePassword(userId, dto));
+
+            verify(passwordEncoder, times(1)).encode(dto.getNewPassword());
+
+            assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
+        }
+
+        @Test
+        void shouldUpdateUserPasswordSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdatePasswordDTO dto = createValidUpdatePasswordRequest();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())).thenReturn(true);
+            when(passwordEncoder.encode(dto.getNewPassword())).thenReturn("encodedPassword");
+
+            userService.updatePassword(userId, dto);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(passwordEncoder, times(1)).encode(dto.getNewPassword());
+        }
+    }
+
 
     //INTERNAL METHODS
-    private static User createValidUser() {
+    private User createValidUser() {
 
         User user = new  User(
                 "Jorge Antonio Erick",
@@ -359,7 +432,7 @@ public class UserServiceTest {
         return user;
     }
 
-    private static UserCreateRequestDTO createValidUserRequest() {
+    private UserCreateRequestDTO createValidUserRequest() {
         Set<AddressRequestDTO> addresses = Set.of(new AddressRequestDTO(
                 "Casa",
                 "Rua Augusto",
@@ -382,7 +455,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserCreateResponseDTO createExpectedUserCreateResponse() {
+    private UserCreateResponseDTO createExpectedUserCreateResponse() {
 
         return new UserCreateResponseDTO(
                 1L,
@@ -392,7 +465,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserDetailsResponseDTO createExpectedUserDetailsResponse() {
+    private UserDetailsResponseDTO createExpectedUserDetailsResponse() {
 
         return new UserDetailsResponseDTO(
                 1L,
@@ -404,7 +477,7 @@ public class UserServiceTest {
         );
     }
 
-    private static AddressAddResponseDTO createExpectedAddAddressResponse() {
+    private AddressAddResponseDTO createExpectedAddAddressResponse() {
 
         return new AddressAddResponseDTO(
                 1L,
@@ -419,7 +492,7 @@ public class UserServiceTest {
         );
     }
 
-    private static AddressDetailsResponseDTO createExpectedAddressDetailsResponse() {
+    private AddressDetailsResponseDTO createExpectedAddressDetailsResponse() {
 
         return new AddressDetailsResponseDTO(
                 1L,
@@ -434,7 +507,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserFilterDTO createInvalidUserFilter() {
+    private UserFilterDTO createInvalidUserFilter() {
         return new UserFilterDTO(
                 1L,
                 "Jorge Antonio Erick",
@@ -448,7 +521,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserFilterDTO createValidUserFilter() {
+    private UserFilterDTO createValidUserFilter() {
         return new UserFilterDTO(
                 1L,
                 "Jorge Antonio Erick",
@@ -462,14 +535,14 @@ public class UserServiceTest {
         );
     }
 
-    private static List<User> createUserList() {
+    private List<User> createUserList() {
         List<User> users = new ArrayList<>();
         users.add(createValidUser());
 
         return users;
     }
 
-    private static UserSummaryResponseDTO createExpectedUserSummaryResponse() {
+    private UserSummaryResponseDTO createExpectedUserSummaryResponse() {
 
         return new UserSummaryResponseDTO(
                 1L,
@@ -484,7 +557,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserUpdateDTO createUpdateUserWithCompleteFields() {
+    private UserUpdateDTO createUpdateUserWithCompleteFields() {
 
         return new UserUpdateDTO(
                 "Diego Maradona",
@@ -495,7 +568,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserUpdateDTO createUpdateWithOnlyEmailField() {
+    private UserUpdateDTO createUpdateWithOnlyEmailField() {
 
         return new UserUpdateDTO(
                 null,
@@ -506,7 +579,7 @@ public class UserServiceTest {
         );
     }
 
-    private static UserDetailsResponseDTO createExpectedUserDetailsResponseAfterUpdateComplete() {
+    private UserDetailsResponseDTO createExpectedUserDetailsResponseAfterUpdateComplete() {
 
         return new UserDetailsResponseDTO(
                 1L,
@@ -517,4 +590,21 @@ public class UserServiceTest {
                 LocalDate.of(2000, 10,22)
         );
     }
+
+    private UserUpdatePasswordDTO createMismatchUpdatePasswordRequest() {
+
+        return new UserUpdatePasswordDTO(
+                "Test@123",
+                "Password@123"
+        );
+    }
+
+    private UserUpdatePasswordDTO createValidUpdatePasswordRequest() {
+
+        return new UserUpdatePasswordDTO(
+                "Password@123",
+                "Test@123"
+        );
+    }
+
 }
