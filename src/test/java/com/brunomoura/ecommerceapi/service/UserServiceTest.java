@@ -5,16 +5,14 @@ import static org.mockito.Mockito.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
 import com.brunomoura.ecommerceapi.dto.user.*;
 import com.brunomoura.ecommerceapi.enums.ErrorCode;
 import com.brunomoura.ecommerceapi.enums.UserRole;
+import com.brunomoura.ecommerceapi.exception.auth.InvalidCredentialsException;
 import com.brunomoura.ecommerceapi.exception.base.BaseException;
 import com.brunomoura.ecommerceapi.exception.base.BusinessException;
 import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
@@ -35,6 +33,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -51,6 +50,7 @@ public class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
+    // User operations tests
     @Nested
     class UserCreation {
 
@@ -110,7 +110,7 @@ public class UserServiceTest {
             assertEquals(UserRole.USER, savedUser.getRole());
             assertEquals(requestDTO.getAddresses().size(), savedUser.getAddresses().size());
 
-            AddressRequestDTO requestAddress = requestDTO.getAddresses().iterator().next();
+            AddressUpdateDTO requestAddress = requestDTO.getAddresses().iterator().next();
             Address savedAddress = savedUser.getAddresses().iterator().next();
 
             assertEquals(requestAddress.getStreetName(), savedAddress.getStreetName());
@@ -153,46 +153,6 @@ public class UserServiceTest {
             verify(userMapper, times(1)).toUserDetailsResponse(user);
 
             assertEquals(dto, responseDTO);
-        }
-    }
-
-    @Nested
-    class FindAddresses {
-
-        @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            Long userId = 2L;
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
-
-            NotFoundException exception = assertThrows(NotFoundException.class,
-                    () -> userService.findAddresses(userId));
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-
-            verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, never()).toAddressDetailsResponse(any());
-        }
-
-        @Test
-        void shouldReturnAddressesListSuccessfully() {
-            Long userId = 1L;
-            User user = createValidUser();
-            AddressDetailsResponseDTO dto = createExpectedAddressDetailsResponse();
-            Address address = user.getAddresses().iterator().next();
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(userMapper.toAddressDetailsResponse(address)).thenReturn(dto);
-
-            List<AddressDetailsResponseDTO> addressResponseList = userService.findAddresses(userId);
-
-            verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(user.getAddresses().size())).toAddressDetailsResponse(address);
-
-            AddressDetailsResponseDTO addressAddResponseDTO = addressResponseList.iterator().next();
-
-            assertEquals(dto, addressAddResponseDTO);
-            assertEquals(1, addressResponseList.size());
         }
     }
 
@@ -407,6 +367,313 @@ public class UserServiceTest {
         }
     }
 
+    @Nested
+    class UpdateRole {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            Long userId = 1L;
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
+
+            BaseException exception = assertThrows(NotFoundException.class, () ->
+                    userService.updateRole(userId, any()));
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+            Long userId = 1L;
+            User user = createValidUser();
+            user.deleteUser();
+            UserUpdateRoleDTO dto = new UserUpdateRoleDTO(UserRole.ADMIN);
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            BaseException exception = assertThrows(BusinessException.class, () ->
+                    userService.updateRole(userId, dto));
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
+        }
+
+        @Test
+        void shouldUpdateUserRoleSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+            UserUpdateRoleDTO dto = new UserUpdateRoleDTO(UserRole.ADMIN);
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            userService.updateRole(userId, dto);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            assertEquals(UserRole.ADMIN, user.getRole());
+        }
+    }
+
+    @Nested
+    class Reactivate {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            ReactivateUserDTO dto = new ReactivateUserDTO("test@email.com", "Password@123");
+
+            when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
+
+            BaseException exception = assertThrows(NotFoundException.class, () ->
+                    userService.reactivate(dto));
+
+            verify(passwordEncoder, never()).matches(any(), any());
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowInvalidCredentialsExceptionWhenCredentialsAreInvalid() {
+            ReactivateUserDTO dto = new ReactivateUserDTO("test@email.com", "Password@123");
+            User user = createValidUser();
+
+            when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())).thenReturn(false);
+
+            BaseException exception = assertThrows(InvalidCredentialsException.class, () ->
+                    userService.reactivate(dto));
+
+            verify(userRepository, times(1)).findByEmail(dto.getEmail());
+            verify(passwordEncoder, times(1)).matches(dto.getPassword(),
+                    user.getPasswordHash());
+
+            assertEquals(ErrorCode.INVALID_CREDENTIALS, exception.getCode());
+        }
+
+        @Test
+        void shouldActivateDeletedUserSuccessfully() {
+            ReactivateUserDTO dto = new ReactivateUserDTO("test@email.com", "Password@123");
+            User user = createValidUser();
+            user.deleteUser();
+
+            when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())).thenReturn(true);
+
+            userService.reactivate(dto);
+
+            verify(userRepository, times(1)).findByEmail(dto.getEmail());
+            verify(passwordEncoder, times(1)).matches(dto.getPassword(),
+                    user.getPasswordHash());
+
+            assertTrue(user.isActive());
+        }
+    }
+
+    @Nested
+    class DeleteUser {
+
+        @Test
+        void shouldDeleteUserSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            userService.delete(userId);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            assertFalse(user.isActive());
+        }
+    }
+
+
+    // Address operations
+    @Nested
+    class AddAddresses {
+
+        @Test
+        void shouldThrowBusinessExceptionWhenAddressAlreadyExists() {
+            Long userId = 1L;
+            User user = createValidUser();
+            AddressCreateDTO request = new AddressCreateDTO("Casa",
+                    "Rua Augusto",
+                    "2000",
+                    "Vila Nova",
+                    "Curiuva",
+                    "Paraná",
+                    "Brasil",
+                    "81800-000");
+            AddressResponseDTO expectedResponse = createExpectedAddressResponse();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            BaseException exception = assertThrows(BusinessException.class, () ->
+                    userService.addAddress(userId, request));
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userMapper, never()).toAddressResponse(any());
+
+            assertEquals(ErrorCode.ADDRESS_ALREADY_EXISTS, exception.getCode());
+        }
+
+        @Test
+        void shouldAddAddressSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+            AddressCreateDTO request = createValidAddressCreate();
+            AddressResponseDTO expectedResponse = createExpectedAddressResponse();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userMapper.toAddressResponse(any())).thenReturn(expectedResponse);
+
+            AddressResponseDTO addressSaved = userService.addAddress(userId, request);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            assertEquals(expectedResponse, addressSaved);
+        }
+    }
+
+    @Nested
+    class FindAddresses {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            Long userId = 2L;
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
+
+            NotFoundException exception = assertThrows(NotFoundException.class,
+                    () -> userService.findAddresses(userId));
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userMapper, never()).toAddressDetailsResponse(any());
+        }
+
+        @Test
+        void shouldReturnAddressesListSuccessfully() {
+            Long userId = 1L;
+            User user = createValidUser();
+            AddressDetailsResponseDTO dto = createExpectedAddressDetailsResponse();
+            Address address = user.getAddresses().iterator().next();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userMapper.toAddressDetailsResponse(address)).thenReturn(dto);
+
+            List<AddressDetailsResponseDTO> addressResponseList = userService.findAddresses(userId);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userMapper, times(user.getAddresses().size())).toAddressDetailsResponse(address);
+
+            AddressDetailsResponseDTO addressAddResponseDTO = addressResponseList.iterator().next();
+
+            assertEquals(dto, addressAddResponseDTO);
+            assertEquals(1, addressResponseList.size());
+        }
+    }
+
+    @Nested
+    class UpdateAddress {
+
+        @Test
+        void shouldThrowNotFoundExceptionWhenUserNotFound() {
+            Long userId = 1L;
+            Long addressId = 2L;
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
+
+            BaseException exception = assertThrows(NotFoundException.class, () ->
+                    userService.updateAddress(userId, addressId, any()));
+
+            verify(userMapper, never()).toAddressResponse(any());
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+        }
+
+        @Test
+        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+            Long userId = 1L;
+            Long addressId = 2L;
+            User user = createValidUser();
+            user.deleteUser();
+            AddressUpdateDTO sameAddress = new AddressUpdateDTO(
+                    "Casa",
+                    "Rua Augusto",
+                    "2000",
+                    "Vila Nova",
+                    "Curiuva",
+                    "Paraná",
+                    "Brasil",
+                    "81800-000");
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            BaseException exception = assertThrows(BusinessException.class, () ->
+                    userService.updateAddress(userId, addressId, sameAddress));
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userMapper, never()).toAddressResponse(any());
+
+            assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
+        }
+
+        @Test
+        void shouldUpdateAddressSuccessfully() {
+            Long userId = 1L;
+            Long addressId = 1L;
+            User user = createValidUser();
+
+            AddressUpdateDTO request = createValidAddressRequest();
+            AddressResponseDTO expectedResponse = createExpectedAddressResponseAfterUpdate();
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+            when(userMapper.toAddressResponse(any())).thenReturn(expectedResponse);
+
+            AddressResponseDTO updatedAddress = userService.updateAddress(userId, addressId, request);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userMapper, times(1)).toAddressResponse(any());
+
+            assertEquals(expectedResponse, updatedAddress);
+        }
+    }
+
+    @Nested
+    class RemoveAddress {
+
+        @Test
+        void shouldRemoveAddressSuccessfully() {
+            Long userId = 1L;
+            Long addressId = 1L;
+            User user = createValidUser();
+            Address newAddress = user.addAddress("Casa",
+                    "Rua Pedro Magalhães",
+                    "120",
+                    "Pinheirinho",
+                    "Curitiba",
+                    "Paraná",
+                    "Brasil",
+                    "81910-420");
+
+            ReflectionTestUtils.setField(newAddress, "id", 2L);
+
+            when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
+
+            userService.removeAddress(userId, addressId);
+
+            verify(userRepository, times(1)).findActiveById(userId);
+
+            Optional<Address> address = user.getAddresses().stream().filter(add ->
+                    add.getId().equals(addressId)).findFirst();
+
+            assertTrue(address.isEmpty());
+        }
+    }
 
     //INTERNAL METHODS
     private User createValidUser() {
@@ -420,7 +687,7 @@ public class UserServiceTest {
                 "Password@123"
                 );
 
-        user.addAddress("Casa",
+        Address address = user.addAddress("Casa",
                 "Rua Augusto",
                 "2000",
                 "Vila Nova",
@@ -429,11 +696,13 @@ public class UserServiceTest {
                 "Brasil",
                 "81800-000");
 
+        ReflectionTestUtils.setField(address, "id", 1L);
+
         return user;
     }
 
     private UserCreateRequestDTO createValidUserRequest() {
-        Set<AddressRequestDTO> addresses = Set.of(new AddressRequestDTO(
+        Set<AddressUpdateDTO> addresses = Set.of(new AddressUpdateDTO(
                 "Casa",
                 "Rua Augusto",
                 "2000",
@@ -477,9 +746,9 @@ public class UserServiceTest {
         );
     }
 
-    private AddressAddResponseDTO createExpectedAddAddressResponse() {
+    private AddressResponseDTO createExpectedAddressResponse() {
 
-        return new AddressAddResponseDTO(
+        return new AddressResponseDTO(
                 1L,
                 "Casa",
                 "Rua Augusto",
@@ -505,6 +774,44 @@ public class UserServiceTest {
                 "Brasil",
                 "81800-000"
         );
+    }
+
+    private AddressCreateDTO createValidAddressCreate() {
+        return new AddressCreateDTO(
+                "Casa",
+                "Rua José",
+                "333",
+                "Hauer",
+                "Curitiba",
+                "Paraná",
+                "Brasil",
+                "81000-200");
+    }
+
+    private AddressUpdateDTO createValidAddressRequest() {
+        return new AddressUpdateDTO(
+                "Casa",
+                "Rua Augusto",
+                "2010",
+                "Vila Nova",
+                "Curitiba",
+                "Paraná",
+                "Brasil",
+                "81800-000");
+    }
+
+    private AddressResponseDTO createExpectedAddressResponseAfterUpdate() {
+
+        return new AddressResponseDTO(
+                1L,
+                "Casa",
+                "Rua Augusto",
+                "2010",
+                "Vila Nova",
+                "Curitiba",
+                "Paraná",
+                "Brasil",
+                "81800-000");
     }
 
     private UserFilterDTO createInvalidUserFilter() {
