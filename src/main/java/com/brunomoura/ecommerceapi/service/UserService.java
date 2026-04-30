@@ -23,7 +23,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +42,7 @@ public class UserService {
         this.userMapper = userMapper;
     }
 
+    // User operations
     @Transactional
     public UserCreateResponseDTO register(UserCreateRequestDTO dto) {
         return buildCreateUserMethod(dto);
@@ -54,33 +54,12 @@ public class UserService {
         return buildCreateUserMethod(dto);
     }
 
-    @PreAuthorize(("hasRole('ADMIN') or #userId == principal.id"))
-    @Transactional
-    public AddressAddResponseDTO addAddress(Long userId, AddressRequestDTO dto) {
-        User user = getActiveUserOrThrow(userId);
-
-        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(),
-                dto.getNeighborhood(), dto.getCity(), dto.getState(), dto.getCountry(), dto.getZipCode());
-
-        logger.info("Address added successfully. userId={}", userId);
-
-        return userMapper.toAddressResponse(address);
-    }
-
     @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
     public UserDetailsResponseDTO findActiveById(Long userId) {
 
         User user = getActiveUserOrThrow(userId);
 
         return userMapper.toUserDetailsResponse(user);
-    }
-
-    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
-    public List<AddressDetailsResponseDTO> findAddresses(Long userId) {
-
-        User user = getActiveUserOrThrow(userId);
-
-        return user.getAddresses().stream().map(userMapper::toAddressDetailsResponse).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -177,24 +156,6 @@ public class UserService {
         logger.info("Role updated successfully. userId={}", userId);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
-    @Transactional
-    public AddressAddResponseDTO updateAddress(Long userId, Long addressId, AddressRequestDTO dto) {
-
-        User user = getActiveUserOrThrow(userId);
-
-        AddressUpdate addressUpdate = new AddressUpdate(
-                dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(), dto.getCity(),
-                dto.getState(), dto.getCountry(), dto.getZipCode()
-        );
-
-        Address address = user.updateAddress(addressId, addressUpdate);
-
-        logger.info("Address updated successfully. userId={}", userId);
-
-        return userMapper.toAddressResponse(address);
-    }
-
     @Transactional
     public void reactivate(ReactivateUserDTO dto) {
 
@@ -210,16 +171,6 @@ public class UserService {
         logger.info("User successfully reactivated. userId={}", user.getId());
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
-    @Transactional
-    public void removeAddress(Long userId, Long addressId) {
-
-        User user = getActiveUserOrThrow(userId);
-        user.removeAddress(addressId);
-
-        logger.info("Address removed successfully. userId={}, addressId={}", userId, addressId);
-    }
-
     @PreAuthorize("(hasRole('ADMIN') and #userId != authentication.principal.id) " +
             "or (hasRole('USER') and #userId == authentication.principal.id)")
     @Transactional
@@ -229,6 +180,57 @@ public class UserService {
         user.deleteUser();
 
         logger.info("User soft deleted. userId={}", userId);
+    }
+
+
+    // Address operations
+    @PreAuthorize(("hasRole('ADMIN') or #userId == principal.id"))
+    @Transactional
+    public AddressResponseDTO addAddress(Long userId, AddressCreateDTO dto) {
+        User user = getActiveUserOrThrow(userId);
+
+        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(),
+                dto.getNeighborhood(), dto.getCity(), dto.getState(), dto.getCountry(), dto.getZipCode());
+
+        logger.info("Address added successfully. userId={}", userId);
+
+        return userMapper.toAddressResponse(address);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
+    public List<AddressDetailsResponseDTO> findAddresses(Long userId) {
+
+        User user = getActiveUserOrThrow(userId);
+
+        return user.getAddresses().stream().map(userMapper::toAddressDetailsResponse).toList();
+    }
+
+    @PreAuthorize(("hasRole('ADMIN') or #userId == principal.id"))
+    @Transactional
+    public AddressResponseDTO updateAddress(Long userId, Long addressId,  AddressUpdateDTO dto) {
+
+        User user = getActiveUserOrThrow(userId);
+
+        AddressUpdate addressUpdate = new AddressUpdate(
+                dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(), dto.getCity(),
+                dto.getState(), dto.getCountry(), dto.getZipCode()
+        );
+
+        Address address = user.updateAddress(addressId, addressUpdate);
+
+        logger.info("Address updated successfully. userId={}", userId);
+
+        return userMapper.toAddressResponse(address);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
+    @Transactional
+    public void removeAddress(Long userId, Long addressId) {
+
+        User user = getActiveUserOrThrow(userId);
+        user.removeAddress(addressId);
+
+        logger.info("Address removed successfully. userId={}, addressId={}", userId, addressId);
     }
 
 
@@ -252,7 +254,8 @@ public class UserService {
     private User findByEmailIncludingDeleted(String email) {
 
         return userRepository.findByEmail(email).orElseThrow(
-                () -> new UsernameNotFoundException(String.format("User with email: %s not found", email))
+                () -> new NotFoundException(ErrorCode.USER_NOT_FOUND,
+                        String.format("User with email: %s not found", email))
         );
     }
 

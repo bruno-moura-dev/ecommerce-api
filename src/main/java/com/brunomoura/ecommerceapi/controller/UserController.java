@@ -24,6 +24,8 @@ public class UserController {
         this.userService = userService;
     }
 
+
+    // User operations endpoints
     @Operation(summary = "Create a new user")
     @PostMapping
     public ResponseEntity<UserCreateResponseDTO> create(@RequestBody @Valid UserCreateRequestDTO dto) {
@@ -33,30 +35,11 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Add address to user")
-    @PostMapping("/{userId}/addresses")
-    public ResponseEntity<AddressAddResponseDTO> addAddress(@PathVariable Long userId,
-                                                            @RequestBody @Valid AddressRequestDTO dto) {
-
-        AddressAddResponseDTO response = userService.addAddress(userId, dto);
-
-        return ResponseEntity.ok(response);
-    }
-
     @Operation(summary = "Get active user by ID")
     @GetMapping("/{userId}")
     public ResponseEntity<UserDetailsResponseDTO> getById(@PathVariable Long userId) {
 
         UserDetailsResponseDTO response = userService.findActiveById(userId);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Get user addresses")
-    @GetMapping("/{userId}/addresses")
-    public ResponseEntity<List<AddressDetailsResponseDTO>> getAddresses(@PathVariable Long userId) {
-
-        List<AddressDetailsResponseDTO> response = userService.findAddresses(userId);
 
         return ResponseEntity.ok(response);
     }
@@ -100,30 +83,11 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Update user address")
-    @PatchMapping("/{userId}/addresses/{addressId}")
-    public ResponseEntity<AddressAddResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
-                                                               @RequestBody @Valid AddressRequestDTO dto) {
-
-        AddressAddResponseDTO response = userService.updateAddress(userId, addressId, dto);
-
-        return ResponseEntity.ok(response);
-    }
-
     @Operation(summary = "Reactivate a previously deactivated user")
     @PatchMapping("/reactivate")
     public ResponseEntity<Void> reactivate(@RequestBody @Valid ReactivateUserDTO dto) {
 
         userService.reactivate(dto);
-
-        return ResponseEntity.noContent().build();
-    }
-
-    @Operation(summary = "Delete user address")
-    @DeleteMapping("/{userId}/addresses/{addressId}")
-    public ResponseEntity<Void> removeAddress(@PathVariable Long userId, @PathVariable Long addressId) {
-
-        userService.removeAddress(userId, addressId);
 
         return ResponseEntity.noContent().build();
     }
@@ -137,4 +101,43 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+
+    // Address operations endpoints
+    @Operation(summary = "Add address to user")
+    @PostMapping("/{userId}/addresses")
+    public ResponseEntity<AddressResponseDTO> addAddress(@PathVariable Long userId,
+                                                         @RequestBody @Valid AddressCreateDTO dto) {
+
+        AddressResponseDTO response = userService.addAddress(userId, dto);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Get user addresses")
+    @GetMapping("/{userId}/addresses")
+    public ResponseEntity<List<AddressDetailsResponseDTO>> getAddresses(@PathVariable Long userId) {
+
+        List<AddressDetailsResponseDTO> response = userService.findAddresses(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Update user address")
+    @PatchMapping("/{userId}/addresses/{addressId}")
+    public ResponseEntity<AddressResponseDTO> updateAddress(@PathVariable Long userId, @PathVariable Long addressId,
+                                                            @RequestBody @Valid AddressUpdateDTO dto) {
+
+        AddressResponseDTO response = userService.updateAddress(userId, addressId, dto);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Delete user address")
+    @DeleteMapping("/{userId}/addresses/{addressId}")
+    public ResponseEntity<Void> removeAddress(@PathVariable Long userId, @PathVariable Long addressId) {
+
+        userService.removeAddress(userId, addressId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

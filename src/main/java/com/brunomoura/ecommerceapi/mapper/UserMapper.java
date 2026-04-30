@@ -22,7 +22,7 @@ public interface UserMapper {
 
     UserSummaryResponseDTO toSummaryResponse(User user);
 
-    AddressAddResponseDTO toAddressResponse(Address address);
+    AddressResponseDTO toAddressResponse(Address address);
 
     AddressDetailsResponseDTO toAddressDetailsResponse(Address address);
 
