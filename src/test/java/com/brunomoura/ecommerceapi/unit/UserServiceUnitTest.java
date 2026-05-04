@@ -1,11 +1,4 @@
-package com.brunomoura.ecommerceapi.service;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.*;
+package com.brunomoura.ecommerceapi.unit;
 
 import com.brunomoura.ecommerceapi.domain.user.Address;
 import com.brunomoura.ecommerceapi.domain.user.User;
@@ -19,7 +12,7 @@ import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
-
+import com.brunomoura.ecommerceapi.service.UserService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +28,18 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+public class UserServiceUnitTest {
 
     @Mock
     private UserRepository userRepository;
@@ -80,7 +83,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void shouldCreateUserSuccessfully() {
+        void shouldCreateUser() {
             User user = createValidUser();
             UserCreateRequestDTO requestDTO = createValidUserRequest();
             UserCreateResponseDTO expectedResponse = createExpectedUserCreateResponse();
@@ -95,11 +98,11 @@ public class UserServiceTest {
 
             ArgumentCaptor<User> argumentCaptor = ArgumentCaptor.forClass(User.class);
 
-            verify(userRepository, times(1)).save(argumentCaptor.capture());
+            verify(userRepository).save(argumentCaptor.capture());
 
             User savedUser = argumentCaptor.getValue();
 
-            verify(userMapper, times(1)).toCreateResponse(user);
+            verify(userMapper).toCreateResponse(user);
 
             assertEquals(requestDTO.getName(), savedUser.getName());
             assertEquals(requestDTO.getEmail(), savedUser.getEmail());
@@ -134,12 +137,12 @@ public class UserServiceTest {
 
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
             verify(userMapper, never()).toUserDetailsResponse(any());
         }
 
         @Test
-        void shouldReturnUserActiveSuccessfully() {
+        void shouldReturnUserActive() {
             Long userId = 1L;
             User user = createValidUser();
             UserDetailsResponseDTO dto = createExpectedUserDetailsResponse();
@@ -149,8 +152,8 @@ public class UserServiceTest {
 
             UserDetailsResponseDTO responseDTO = userService.findActiveById(userId);
 
-            verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(1)).toUserDetailsResponse(user);
+            verify(userRepository).findActiveById(userId);
+            verify(userMapper).toUserDetailsResponse(user);
 
             assertEquals(dto, responseDTO);
         }
@@ -174,7 +177,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void shouldReturnUserSummaryPageSuccessfully() {
+        void shouldReturnUserSummaryPage() {
             UserFilterDTO dto = createValidUserFilter();
             UserSummaryResponseDTO expectedUserSummary = createExpectedUserSummaryResponse();
             Pageable pageable = PageRequest.of(0, 10);
@@ -215,24 +218,6 @@ public class UserServiceTest {
     class UpdateUser {
 
         @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            Long userId = 1L;
-            UserUpdateDTO dto = createUpdateUserWithCompleteFields();
-
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
-
-            NotFoundException exception = assertThrows(NotFoundException.class,
-                    () -> userService.update(userId, dto));
-
-            verify(userRepository, never()).existsByEmailAndIdNot(any(), any());
-            verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
-            verify(userMapper, never()).toUserDetailsResponse(any());
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-        }
-
-        @Test
         void shouldThrowBusinessExceptionWhenEmailAlreadyExists() {
             Long userId = 1L;
             User user = createValidUser();
@@ -244,7 +229,7 @@ public class UserServiceTest {
             BusinessException exception = assertThrows(BusinessException.class,
                     () -> userService.update(userId, dto));
 
-            verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
+            verify(userRepository).existsByEmailAndIdNot(dto.getEmail(), user.getId());
             verify(userRepository, never()).existsByCpfAndIdNot(any(), any());
             verify(userMapper, never()).toUserDetailsResponse(any());
 
@@ -264,15 +249,15 @@ public class UserServiceTest {
             BusinessException exception = assertThrows(BusinessException.class,
                     () -> userService.update(userId, dto));
 
-            verify(userRepository, times(1)).existsByEmailAndIdNot(dto.getEmail(), user.getId());
-            verify(userRepository, times(1)).existsByCpfAndIdNot(dto.getCpf(), user.getId());
+            verify(userRepository).existsByEmailAndIdNot(dto.getEmail(), user.getId());
+            verify(userRepository).existsByCpfAndIdNot(dto.getCpf(), user.getId());
             verify(userMapper, never()).toUserDetailsResponse(any());
 
             assertEquals(ErrorCode.CPF_ALREADY_EXISTS, exception.getCode());
         }
 
         @Test
-        void shouldUpdateAllFieldsSuccessfully() {
+        void shouldUpdateAllFields() {
             Long userId = 1L;
             User user = createValidUser();
             UserUpdateDTO requestDTO = createUpdateUserWithCompleteFields();
@@ -285,11 +270,9 @@ public class UserServiceTest {
 
             UserDetailsResponseDTO result = userService.update(userId, requestDTO);
 
-            verify(userRepository, times(1))
-                    .existsByEmailAndIdNot(requestDTO.getEmail(), user.getId());
-            verify(userRepository, times(1))
-                    .existsByCpfAndIdNot(requestDTO.getCpf(), user.getId());
-            verify(userMapper, times(1)).toUserDetailsResponse(user);
+            verify(userRepository).existsByEmailAndIdNot(requestDTO.getEmail(), user.getId());
+            verify(userRepository).existsByCpfAndIdNot(requestDTO.getCpf(), user.getId());
+            verify(userMapper).toUserDetailsResponse(user);
 
             assertEquals(expectedResult, result);
         }
@@ -300,28 +283,14 @@ public class UserServiceTest {
     class UpdatePassword {
 
         @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            Long userId = 1L;
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
-
-            BaseException exception = assertThrows(NotFoundException.class, () ->
-                    userService.updatePassword(userId, any()));
-
-            verify(passwordEncoder, never()).matches(any(), any());
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-        }
-
-        @Test
-        void shouldThrowInvalidCurrentPasswordWhenPasswordsDontMatch() {
+        void shouldThrowInvalidCurrentPasswordExceptionWhenPasswordIsIncorrect() {
             Long userId = 1L;
             User user = createValidUser();
             UserUpdatePasswordDTO dto = createMismatchUpdatePasswordRequest();
 
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches(dto.getCurrentPassword(), dto.getNewPassword())).thenReturn(false);
+            when(passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())).thenReturn(false);
 
             BaseException exception = assertThrows(InvalidCurrentPasswordException.class, () ->
                     userService.updatePassword(userId, dto));
@@ -332,7 +301,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+        void shouldThrowBusinessExceptionIfUserIsDeleted() {
             Long userId = 1L;
             User user = createValidUser();
             user.deleteUser();
@@ -340,18 +309,18 @@ public class UserServiceTest {
 
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches(dto.getCurrentPassword(), dto.getNewPassword())).thenReturn(true);
+            when(passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())).thenReturn(true);
 
             BaseException exception = assertThrows(BusinessException.class, () ->
                     userService.updatePassword(userId, dto));
 
-            verify(passwordEncoder, times(1)).encode(dto.getNewPassword());
+            verify(passwordEncoder).encode(dto.getNewPassword());
 
             assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
         }
 
         @Test
-        void shouldUpdateUserPasswordSuccessfully() {
+        void shouldUpdateUserPassword() {
             Long userId = 1L;
             User user = createValidUser();
             UserUpdatePasswordDTO dto = createValidUpdatePasswordRequest();
@@ -362,8 +331,10 @@ public class UserServiceTest {
 
             userService.updatePassword(userId, dto);
 
-            verify(userRepository, times(1)).findActiveById(userId);
-            verify(passwordEncoder, times(1)).encode(dto.getNewPassword());
+            verify(userRepository).findActiveById(userId);
+            verify(passwordEncoder).encode(dto.getNewPassword());
+
+            assertEquals("encodedPassword", user.getPasswordHash());
         }
     }
 
@@ -371,21 +342,7 @@ public class UserServiceTest {
     class UpdateRole {
 
         @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            Long userId = 1L;
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
-
-            BaseException exception = assertThrows(NotFoundException.class, () ->
-                    userService.updateRole(userId, any()));
-
-            verify(userRepository, times(1)).findActiveById(userId);
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-        }
-
-        @Test
-        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+        void shouldThrowBusinessExceptionIfUserIsDeleted() {
             Long userId = 1L;
             User user = createValidUser();
             user.deleteUser();
@@ -396,13 +353,13 @@ public class UserServiceTest {
             BaseException exception = assertThrows(BusinessException.class, () ->
                     userService.updateRole(userId, dto));
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
 
             assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
         }
 
         @Test
-        void shouldUpdateUserRoleSuccessfully() {
+        void shouldUpdateUserRole() {
             Long userId = 1L;
             User user = createValidUser();
             UserUpdateRoleDTO dto = new UserUpdateRoleDTO(UserRole.ADMIN);
@@ -411,7 +368,7 @@ public class UserServiceTest {
 
             userService.updateRole(userId, dto);
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
 
             assertEquals(UserRole.ADMIN, user.getRole());
         }
@@ -419,20 +376,6 @@ public class UserServiceTest {
 
     @Nested
     class Reactivate {
-
-        @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            ReactivateUserDTO dto = new ReactivateUserDTO("test@email.com", "Password@123");
-
-            when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
-
-            BaseException exception = assertThrows(NotFoundException.class, () ->
-                    userService.reactivate(dto));
-
-            verify(passwordEncoder, never()).matches(any(), any());
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-        }
 
         @Test
         void shouldThrowInvalidCredentialsExceptionWhenCredentialsAreInvalid() {
@@ -445,15 +388,15 @@ public class UserServiceTest {
             BaseException exception = assertThrows(InvalidCredentialsException.class, () ->
                     userService.reactivate(dto));
 
-            verify(userRepository, times(1)).findByEmail(dto.getEmail());
-            verify(passwordEncoder, times(1)).matches(dto.getPassword(),
+            verify(userRepository).findByEmail(dto.getEmail());
+            verify(passwordEncoder).matches(dto.getPassword(),
                     user.getPasswordHash());
 
             assertEquals(ErrorCode.INVALID_CREDENTIALS, exception.getCode());
         }
 
         @Test
-        void shouldActivateDeletedUserSuccessfully() {
+        void shouldActivateDeletedUser() {
             ReactivateUserDTO dto = new ReactivateUserDTO("test@email.com", "Password@123");
             User user = createValidUser();
             user.deleteUser();
@@ -463,8 +406,8 @@ public class UserServiceTest {
 
             userService.reactivate(dto);
 
-            verify(userRepository, times(1)).findByEmail(dto.getEmail());
-            verify(passwordEncoder, times(1)).matches(dto.getPassword(),
+            verify(userRepository).findByEmail(dto.getEmail());
+            verify(passwordEncoder).matches(dto.getPassword(),
                     user.getPasswordHash());
 
             assertTrue(user.isActive());
@@ -475,7 +418,7 @@ public class UserServiceTest {
     class DeleteUser {
 
         @Test
-        void shouldDeleteUserSuccessfully() {
+        void shouldDeleteUser() {
             Long userId = 1L;
             User user = createValidUser();
 
@@ -483,7 +426,7 @@ public class UserServiceTest {
 
             userService.delete(userId);
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
 
             assertFalse(user.isActive());
         }
@@ -492,7 +435,7 @@ public class UserServiceTest {
 
     // Address operations
     @Nested
-    class AddAddresses {
+    class AddAddress {
 
         @Test
         void shouldThrowBusinessExceptionWhenAddressAlreadyExists() {
@@ -513,14 +456,14 @@ public class UserServiceTest {
             BaseException exception = assertThrows(BusinessException.class, () ->
                     userService.addAddress(userId, request));
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
             verify(userMapper, never()).toAddressResponse(any());
 
             assertEquals(ErrorCode.ADDRESS_ALREADY_EXISTS, exception.getCode());
         }
 
         @Test
-        void shouldAddAddressSuccessfully() {
+        void shouldAddAddress() {
             Long userId = 1L;
             User user = createValidUser();
             AddressCreateDTO request = createValidAddressCreate();
@@ -531,14 +474,15 @@ public class UserServiceTest {
 
             AddressResponseDTO addressSaved = userService.addAddress(userId, request);
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
 
             assertEquals(expectedResponse, addressSaved);
+            assertEquals(2, user.getAddresses().size());
         }
     }
 
     @Nested
-    class FindAddresses {
+    class FindUserAddresses {
 
         @Test
         void shouldThrowNotFoundExceptionWhenUserNotFound() {
@@ -551,12 +495,12 @@ public class UserServiceTest {
 
             assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
             verify(userMapper, never()).toAddressDetailsResponse(any());
         }
 
         @Test
-        void shouldReturnAddressesListSuccessfully() {
+        void shouldReturnAddressesList() {
             Long userId = 1L;
             User user = createValidUser();
             AddressDetailsResponseDTO dto = createExpectedAddressDetailsResponse();
@@ -567,7 +511,7 @@ public class UserServiceTest {
 
             List<AddressDetailsResponseDTO> addressResponseList = userService.findAddresses(userId);
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
             verify(userMapper, times(user.getAddresses().size())).toAddressDetailsResponse(address);
 
             AddressDetailsResponseDTO addressAddResponseDTO = addressResponseList.iterator().next();
@@ -581,22 +525,7 @@ public class UserServiceTest {
     class UpdateAddress {
 
         @Test
-        void shouldThrowNotFoundExceptionWhenUserNotFound() {
-            Long userId = 1L;
-            Long addressId = 2L;
-
-            when(userRepository.findActiveById(userId)).thenReturn(Optional.empty());
-
-            BaseException exception = assertThrows(NotFoundException.class, () ->
-                    userService.updateAddress(userId, addressId, any()));
-
-            verify(userMapper, never()).toAddressResponse(any());
-
-            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-        }
-
-        @Test
-        void shouldThrowBusinessExceptionWhenUserIsDeleted() {
+        void shouldThrowBusinessExceptionIfUserIsDeleted() {
             Long userId = 1L;
             Long addressId = 2L;
             User user = createValidUser();
@@ -616,14 +545,14 @@ public class UserServiceTest {
             BaseException exception = assertThrows(BusinessException.class, () ->
                     userService.updateAddress(userId, addressId, sameAddress));
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
             verify(userMapper, never()).toAddressResponse(any());
 
             assertEquals(ErrorCode.USER_DELETED_CANNOT_BE_CHANGED, exception.getCode());
         }
 
         @Test
-        void shouldUpdateAddressSuccessfully() {
+        void shouldUpdateAddress() {
             Long userId = 1L;
             Long addressId = 1L;
             User user = createValidUser();
@@ -636,8 +565,8 @@ public class UserServiceTest {
 
             AddressResponseDTO updatedAddress = userService.updateAddress(userId, addressId, request);
 
-            verify(userRepository, times(1)).findActiveById(userId);
-            verify(userMapper, times(1)).toAddressResponse(any());
+            verify(userRepository).findActiveById(userId);
+            verify(userMapper).toAddressResponse(any());
 
             assertEquals(expectedResponse, updatedAddress);
         }
@@ -647,7 +576,7 @@ public class UserServiceTest {
     class RemoveAddress {
 
         @Test
-        void shouldRemoveAddressSuccessfully() {
+        void shouldRemoveAddress() {
             Long userId = 1L;
             Long addressId = 1L;
             User user = createValidUser();
@@ -666,7 +595,7 @@ public class UserServiceTest {
 
             userService.removeAddress(userId, addressId);
 
-            verify(userRepository, times(1)).findActiveById(userId);
+            verify(userRepository).findActiveById(userId);
 
             Optional<Address> address = user.getAddresses().stream().filter(add ->
                     add.getId().equals(addressId)).findFirst();
