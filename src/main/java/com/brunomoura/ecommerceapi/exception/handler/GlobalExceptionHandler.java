@@ -89,7 +89,6 @@ public class GlobalExceptionHandler {
                 ((msg1, msg2) -> msg1)
         ));
 
-        errorResponse.setMessage("Validation failed");
         errorResponse.setErrors(errors);
 
         buildLogger(e, ErrorCode.INVALID_FIELDS, HttpStatus.BAD_REQUEST, request);
