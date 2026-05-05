@@ -623,7 +623,7 @@ public class UserServiceUnitTest {
                 "Curiuva",
                 "Paraná",
                 "Brasil",
-                "81800-000");
+                "81800000");
 
         ReflectionTestUtils.setField(address, "id", 1L);
 
@@ -639,7 +639,7 @@ public class UserServiceUnitTest {
                 "Curiuva",
                 "Paraná",
                 "Brasil",
-                "81800-000"
+                "81800000"
         ));
 
         return new UserCreateRequestDTO(
@@ -686,7 +686,7 @@ public class UserServiceUnitTest {
                 "Curitiba",
                 "Paraná",
                 "Brasil",
-                "81800-000"
+                "81800000"
         );
     }
 
@@ -701,7 +701,7 @@ public class UserServiceUnitTest {
                 "City",
                 "Paraná",
                 "Brasil",
-                "81800-000"
+                "81800000"
         );
     }
 
@@ -714,7 +714,7 @@ public class UserServiceUnitTest {
                 "Curitiba",
                 "Paraná",
                 "Brasil",
-                "81000-200");
+                "81000200");
     }
 
     private AddressUpdateDTO createValidAddressRequest() {
@@ -726,7 +726,7 @@ public class UserServiceUnitTest {
                 "Curitiba",
                 "Paraná",
                 "Brasil",
-                "81800-000");
+                "81800000");
     }
 
     private AddressResponseDTO createExpectedAddressResponseAfterUpdate() {
@@ -740,7 +740,7 @@ public class UserServiceUnitTest {
                 "Curitiba",
                 "Paraná",
                 "Brasil",
-                "81800-000");
+                "81800000");
     }
 
     private UserFilterDTO createInvalidUserFilter() {
