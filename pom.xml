@@ -127,12 +127,7 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>1.18.30</version>
-						</path>
-						<path>
-							<groupId>org.hibernate.orm</groupId>
-							<artifactId>hibernate-jpamodelgen</artifactId>
-							<version>6.4.4.Final</version>
+							<version>1.18.44</version>
 						</path>
                         <path>
                             <groupId>org.mapstruct</groupId>

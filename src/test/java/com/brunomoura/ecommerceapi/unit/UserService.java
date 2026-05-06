@@ -12,7 +12,6 @@ import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
-import com.brunomoura.ecommerceapi.service.UserService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceUnitTest {
+public class UserService {
 
     @Mock
     private UserRepository userRepository;
@@ -51,7 +50,7 @@ public class UserServiceUnitTest {
     private UserMapper userMapper;
 
     @InjectMocks
-    private UserService userService;
+    private com.brunomoura.ecommerceapi.service.UserService userService;
 
     // User operations tests
     @Nested
@@ -448,8 +447,7 @@ public class UserServiceUnitTest {
                     "Curiuva",
                     "Paraná",
                     "Brasil",
-                    "81800-000");
-            AddressResponseDTO expectedResponse = createExpectedAddressResponse();
+                    "81800000");
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
 
@@ -538,7 +536,7 @@ public class UserServiceUnitTest {
                     "Curiuva",
                     "Paraná",
                     "Brasil",
-                    "81800-000");
+                    "81800000");
 
             when(userRepository.findActiveById(userId)).thenReturn(Optional.of(user));
 
@@ -587,7 +585,7 @@ public class UserServiceUnitTest {
                     "Curitiba",
                     "Paraná",
                     "Brasil",
-                    "81910-420");
+                    "81910420");
 
             ReflectionTestUtils.setField(newAddress, "id", 2L);
 
@@ -801,17 +799,6 @@ public class UserServiceUnitTest {
                 "81380831237",
                 "41995925262",
                 LocalDate.of(2000, 10,22)
-        );
-    }
-
-    private UserUpdateDTO createUpdateWithOnlyEmailField() {
-
-        return new UserUpdateDTO(
-                null,
-                "diego@email.com.br",
-                null,
-                null,
-                null
         );
     }
 
