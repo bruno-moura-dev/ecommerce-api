@@ -12,6 +12,7 @@ import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
 import com.brunomoura.ecommerceapi.exception.user.InvalidCurrentPasswordException;
 import com.brunomoura.ecommerceapi.mapper.UserMapper;
 import com.brunomoura.ecommerceapi.repository.UserRepository;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserService {
+public class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;

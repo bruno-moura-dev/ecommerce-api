@@ -1,6 +1,5 @@
 package com.brunomoura.ecommerceapi.util;
 
-import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.user.AddressUpdateDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 
