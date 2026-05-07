@@ -93,7 +93,6 @@ public class AuthServiceTest {
 
             Authentication authentication = mock(Authentication.class);
             UserDetails userDetails = mock(UserDetails.class);
-
             Date expirationDate = Date.from(Instant.now().plusSeconds(3600000));
 
             when(authenticationManager.authenticate(auth)).thenReturn(authentication);
@@ -105,7 +104,7 @@ public class AuthServiceTest {
 
             assertEquals("test-jwt-token", response.getToken());
             assertTrue(response.getExpiresAt().isAfter(Instant.now()));
-            assertTrue(response.getType().contains("Bearer "));
+            assertEquals("Bearer ", response.getType());
 
             verify(authenticationManager).authenticate(auth);
             verify(jwtService).generateToken(userDetails);
@@ -116,7 +115,7 @@ public class AuthServiceTest {
     class Register {
 
         @Test
-        void shouldThrowBusinessExceptionWhenEmailAlreadyExists() {
+        void shouldThrowUsernameNotFoundExceptionWhenUserCannotBeLoaded() {
             UserCreateRequestDTO request = createValidUserRequest();
 
             when(userService.register(request))
@@ -152,6 +151,35 @@ public class AuthServiceTest {
 
             verify(userService).register(request);
             verify(customUserDetailsService).loadUserByUsername(request.getEmail());
+        }
+
+        @Test
+        void shouldReturnTokenWhenUserRegisteredSuccessfully() {
+            UserCreateRequestDTO request = createValidUserRequest();
+            UserCreateResponseDTO userCreateResponse = new UserCreateResponseDTO(
+                    1L,
+                    request.getName(),
+                    request.getEmail(),
+                    request.getPhoneNumber()
+            );
+            UserDetails userDetails = mock(UserDetails.class);
+            Date expirationDate = Date.from(Instant.now().plusSeconds(3600000));
+
+            when(userService.register(request)).thenReturn(userCreateResponse);
+            when(customUserDetailsService.loadUserByUsername(request.getEmail())).thenReturn(userDetails);
+            when(jwtService.generateToken(userDetails)).thenReturn("test-jwt-token");
+            when(jwtService.extractExpiration(any())).thenReturn(expirationDate);
+
+            LoginResponseDTO response = authService.register(request);
+
+            assertEquals("test-jwt-token", response.getToken());
+            assertTrue(response.getExpiresAt().isAfter(Instant.now()));
+            assertEquals("Bearer ", response.getType());
+
+            verify(userService).register(request);
+            verify(customUserDetailsService).loadUserByUsername(request.getEmail());
+            verify(jwtService).generateToken(userDetails);
+            verify(jwtService).extractExpiration(any());
         }
     }
 }
