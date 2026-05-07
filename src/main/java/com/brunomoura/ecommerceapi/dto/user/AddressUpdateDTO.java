@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddressRequestDTO {
+public class AddressUpdateDTO {
 
     @Size(max = 50, message = "Label must be shorter than 50 characters long.")
     private String label;

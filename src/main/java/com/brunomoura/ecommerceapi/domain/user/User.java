@@ -5,6 +5,7 @@ import com.brunomoura.ecommerceapi.enums.UserRole;
 
 import com.brunomoura.ecommerceapi.exception.base.BusinessException;
 import com.brunomoura.ecommerceapi.exception.base.NotFoundException;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,6 +44,7 @@ public class User {
     @Getter @Setter
     private LocalDate dateOfBirth;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Getter
     @Column(length = 128)
     private String passwordHash;

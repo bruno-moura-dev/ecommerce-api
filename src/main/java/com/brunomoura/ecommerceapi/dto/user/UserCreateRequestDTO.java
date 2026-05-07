@@ -45,6 +45,6 @@ public class UserCreateRequestDTO {
 
     @NotNull(message = "Addresses is required.")
     @Size(min = 1, max = 20, message = "Addresses must contain between 1 and 20 items.")
-    private Set<AddressRequestDTO> addresses;
+    private Set<AddressUpdateDTO> addresses;
 
 }
