@@ -9,7 +9,11 @@ domain-driven design (DDD), validation, exception handling, and JWT-based authen
 
 ## 🚧 Project Status
 
-In active development — currently expanding test coverage and improving architecture.
+In active development
+
+- unit tests implemented
+- authentication integration tests implemented
+- preparing cloud deployment
 
 ---
 
@@ -29,7 +33,12 @@ In active development — currently expanding test coverage and improving archit
 - Spring Security
 - JWT (Authentication & Authorization)
 - JPA / Hibernate
-- H2 Database
+- H2 Database (development)
+- PostgreSQL
+- Dockerized application
+- JUnit 5
+- Mockito
+- MockMvc
 - Maven
 
 ---
@@ -42,6 +51,10 @@ In active development — currently expanding test coverage and improving archit
 - Role-based access control
 - Global exception handling with standardized error responses
 - Input validation with custom constraints
+- Unit tests
+- Integration tests for authentication flow
+- Dockerized deployment
+- Environment profiles (dev and prod)
 
 ---
 
@@ -59,6 +72,9 @@ In active development — currently expanding test coverage and improving archit
 - Domain-driven design (DDD) approach for entity modeling
 - User acts as the aggregate root, controlling the lifecycle of related entities such as Address
 - Validation is enforced at the domain level to ensure consistency
+- Address was modeled with behavior similar to a Value Object to encapsulate address consistency rules, while still being implemented as an entity to support updates without requiring removal and recreation
+- Environment-specific configuration was separated using Spring Profiles (`dev` and `prod`)
+- Authentication flow was designed using stateless JWT-based security
 
 ---
 
@@ -69,7 +85,7 @@ POST /auth/login
 ```json
 {
   "email": "admin@test.com",
-  "password": "123456"
+  "password": "Admin@123"
 }
 ```
 
@@ -96,21 +112,37 @@ cd ecommerce-api
 
 ---
 
-### 2. Set environment variables
+### 2. Environment profiles
+
+The application supports multiple environments through Spring Profiles:
+
+- `dev` → H2 in-memory database
+- `prod` → PostgreSQL database
+
+By default, the application runs using the `dev` profile.
+
+---
+
+### 3. Set environment variables
 
 ```env
 ADMIN_USERNAME=admin@test.com
-ADMIN_PASSWORD=123456
+ADMIN_PASSWORD=Admin@123
 ADMIN_ROLE=ADMIN
-JWT_SECRET=ecommerce-api-secret-key-2026
+
+JWT_SECRET=your_jwt_secret
 JWT_EXPIRATION=3600000
+
+DB_URL=your_database_url
+DB_USERNAME=your_database_username
+DB_PASSWORD=your_database_password
 ```
 
 The admin user is created on application startup using the provided environment variables.
 
 ---
 
-### 3. Run the application
+### 4. Run locally
 
 ```bash
 ./mvnw spring-boot:run
@@ -120,6 +152,21 @@ Or run the main class from your IDE:
 
 ```md
 EcommerceApiApplication
+```
+---
+
+### 5. Run with Docker
+
+Build the image:
+
+```bash
+docker build -t ecommerce-api .
+```
+
+Run the container:
+
+```bash
+docker run -p 8080:8080 ecommerce-api
 ```
 
 ---
@@ -141,10 +188,11 @@ http://localhost:8080/swagger-ui.html
 ## 🔮 Future Improvements
 
 - Implementation of additional e-commerce domains (Product, Order, Cart, etc.)
-- Integration tests
-- Docker containerization
-- Sorting support (ORDER BY) for paginated queries
+- Expanded integration test coverage
+- Database migrations with Flyway
+- CI/CD pipeline
 - Performance optimizations
+- Observability improvements
 
 ---
 
@@ -157,4 +205,4 @@ clean architecture, domain-driven design principles, and industry best practices
 
 ## 🚀 Final Notes
 
-This project simulates a real-world backend application, focusing on clean architecture, security, and maintainability.
+This project simulates a production-oriented backend application, focusing on clean architecture, security, testing, containerization, and maintainability.
