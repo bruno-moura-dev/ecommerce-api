@@ -130,15 +130,15 @@ ADMIN_USERNAME=admin@test.com
 ADMIN_PASSWORD=Admin@123
 ADMIN_ROLE=ADMIN
 
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_base64_encoded_secret
 JWT_EXPIRATION=3600000
 
 DB_URL=your_database_url
 DB_USERNAME=your_database_username
 DB_PASSWORD=your_database_password
 ```
-
-The admin user is created on application startup using the provided environment variables.
+- JWT_SECRET must be a valid Base64-encoded key.
+- The admin user is created on application startup using the provided environment variables.
 
 ---
 
