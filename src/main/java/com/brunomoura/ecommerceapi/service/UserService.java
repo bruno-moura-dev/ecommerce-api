@@ -168,7 +168,7 @@ public class UserService {
 
         user.activeUser();
 
-        logger.info("User successfully reactivated. userId={}", user.getId());
+        logger.info("User reactivated successfully. userId={}", user.getId());
     }
 
     @PreAuthorize("(hasRole('ADMIN') and #userId != authentication.principal.id) " +
