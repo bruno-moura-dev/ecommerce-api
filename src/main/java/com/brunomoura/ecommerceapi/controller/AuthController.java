@@ -4,8 +4,12 @@ import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 import com.brunomoura.ecommerceapi.service.AuthService;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +28,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Authenticate user and return JWT token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Authentication successful"),
+            @ApiResponse(responseCode = "401", description = "Invalid email or password")
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO dto) {
 
@@ -33,6 +41,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Register user and return JWT token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error, duplicated email or duplicated CPF"),
+    })
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody @Valid UserCreateRequestDTO dto) {
 
