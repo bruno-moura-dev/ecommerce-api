@@ -113,7 +113,7 @@ public class UserServiceTest {
             assertEquals(UserRole.USER, savedUser.getRole());
             assertEquals(requestDTO.getAddresses().size(), savedUser.getAddresses().size());
 
-            AddressUpdateDTO requestAddress = requestDTO.getAddresses().iterator().next();
+            AddressCreateDTO requestAddress = requestDTO.getAddresses().iterator().next();
             Address savedAddress = savedUser.getAddresses().iterator().next();
 
             assertEquals(requestAddress.getStreetName(), savedAddress.getStreetName());
@@ -630,7 +630,7 @@ public class UserServiceTest {
     }
 
     private UserCreateRequestDTO createValidUserRequest() {
-        Set<AddressUpdateDTO> addresses = Set.of(new AddressUpdateDTO(
+        Set<AddressCreateDTO> addresses = Set.of(new AddressCreateDTO(
                 "Casa",
                 "Rua Augusto",
                 "2000",

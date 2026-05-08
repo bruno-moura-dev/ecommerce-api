@@ -1,5 +1,6 @@
 package com.brunomoura.ecommerceapi.util;
 
+import com.brunomoura.ecommerceapi.dto.user.AddressCreateDTO;
 import com.brunomoura.ecommerceapi.dto.user.AddressUpdateDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 
@@ -11,7 +12,7 @@ import java.util.UUID;
 public final class TestDataFactory {
 
     public static UserCreateRequestDTO createValidUserRequest() {
-        Set<AddressUpdateDTO> addresses = Set.of(new AddressUpdateDTO(
+        Set<AddressCreateDTO> addresses = Set.of(new AddressCreateDTO(
                 "Casa",
                 "Rua Augusto",
                 "2000",
