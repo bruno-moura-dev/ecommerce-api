@@ -39,7 +39,7 @@ public class UserCreateRequestDTO {
     @ValidPhoneNumber
     private String phoneNumber;
 
-    @Schema(example = "27/04/2001", description = "User's date of birth")
+    @Schema(example = "2001-04-27", description = "User's date of birth")
     @NotNull(message = "Date of birth is required.")
     @ValidDateOfBirth(message = "Invalid date of birth. User must be between 18 and 125 years old, " +
             "and the date cannot be in the future.")

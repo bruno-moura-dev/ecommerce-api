@@ -42,7 +42,7 @@ public class AuthController {
 
     @Operation(summary = "Register user and return JWT token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
             @ApiResponse(responseCode = "400", description = "Validation error, duplicated email or duplicated CPF"),
     })
     @PostMapping("/register")
