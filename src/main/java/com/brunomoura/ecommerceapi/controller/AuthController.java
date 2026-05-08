@@ -3,9 +3,12 @@ package com.brunomoura.ecommerceapi.controller;
 import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
+import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
 import com.brunomoura.ecommerceapi.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -29,8 +32,21 @@ public class AuthController {
 
     @Operation(summary = "Authenticate user and return JWT token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Authentication successful"),
-            @ApiResponse(responseCode = "401", description = "Invalid email or password")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Authentication successful",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponseDTO.class)
+                    )),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid email or password",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    ))
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO dto) {
@@ -42,8 +58,21 @@ public class AuthController {
 
     @Operation(summary = "Register user and return JWT token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Validation error, duplicated email or duplicated CPF"),
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "User registered successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponseDTO.class)
+                    )),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error, duplicated email or duplicated CPF",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
     })
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody @Valid UserCreateRequestDTO dto) {
