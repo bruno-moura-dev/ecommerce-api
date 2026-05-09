@@ -5,6 +5,21 @@ Backend API for an e-commerce system built with Java and Spring Boot.
 This project focuses on building a robust and secure REST API, applying best practices such as layered architecture,
 domain-driven design (DDD), validation, exception handling, and JWT-based authentication.
 
+## 🔗 Live API
+
+- API Base URL: https://ecommerce-api-c9mz.onrender.com
+- Swagger UI: https://ecommerce-api-c9mz.onrender.com/swagger-ui/index.html
+
+---
+## 🔑 Demo Credentials
+
+```json
+{
+  "email": "admin@test.com",
+  "password": "Admin@123"
+}
+```
+
 ---
 
 ## 🚧 Project Status
@@ -13,7 +28,7 @@ In active development
 
 - unit tests implemented
 - authentication integration tests implemented
-- preparing cloud deployment
+- deployed on Render
 
 ---
 
@@ -35,7 +50,7 @@ In active development
 - JPA / Hibernate
 - H2 Database (development)
 - PostgreSQL
-- Dockerized application
+- Docker
 - JUnit 5
 - Mockito
 - MockMvc
@@ -53,7 +68,7 @@ In active development
 - Input validation with custom constraints
 - Unit tests
 - Integration tests for authentication flow
-- Dockerized deployment
+- Docker containerization
 - Environment profiles (dev and prod)
 
 ---
@@ -78,26 +93,16 @@ In active development
 
 ---
 
-## 📌 Example Request
+## 🏗️ Architecture
 
-POST /auth/login
+The application follows a layered architecture:
 
-```json
-{
-  "email": "admin@test.com",
-  "password": "Admin@123"
-}
-```
-
----
-
-## 📌 Example Response
-
-```json
-{
-  "token": "jwt_token_here"
-}
-```
+- Controller layer
+- Service layer
+- Repository layer
+- Domain validation layer
+- Global exception handling
+- JWT-based security layer
 
 ---
 
@@ -175,7 +180,7 @@ docker run -p 8080:8080 ecommerce-api
 
 Swagger UI available at:
 
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 
 ---
 
