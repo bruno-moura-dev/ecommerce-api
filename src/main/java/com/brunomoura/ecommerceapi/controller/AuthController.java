@@ -4,11 +4,11 @@ import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
-import com.brunomoura.ecommerceapi.security.handler.CustomAuthenticationEntryPoint;
 import com.brunomoura.ecommerceapi.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,8 +46,19 @@ public class AuthController {
                     description = "Invalid email or password",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = CustomAuthenticationEntryPoint.class)
-                    ))
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 401,
+                                        "error": "UNAUTHORIZED",
+                                        "code": "INVALID_CREDENTIALS",
+                                        "message": "Invalid email or password",
+                                        "path": "/auth/login",
+                                        "errors": {}
+                                    }
+                                    """)))
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO dto) {

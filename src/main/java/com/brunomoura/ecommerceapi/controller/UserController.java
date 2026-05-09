@@ -6,6 +6,7 @@ import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -44,14 +45,40 @@ public class UserController {
                     description = "Validation error, duplicated email or duplicated CPF",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))),
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 400,
+                                        "error": "BAD_REQUEST",
+                                        "code": "INVALID_FIELDS",
+                                        "message": "Validation error",
+                                        "path": "/users",
+                                        "errors": {
+                                            "email": "Email is required",
+                                            "cpf": "CPF already exists"
+                                        }
+                                    }
+                                    """))),
 
             @ApiResponse(
                     responseCode = "401",
                     description = "Unauthorized",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)))
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 401,
+                                        "error": "UNAUTHORIZED",
+                                        "code": "INVALID_FIELDS",
+                                        "message": "Validation error",
+                                        "path": "/users",
+                                        "errors": {
+                                            "email": "Email is required",
+                                            "cpf": "CPF already exists"
+                                        }
+                                    }
+                                    """)))
     })
     @PostMapping
     public ResponseEntity<UserCreateResponseDTO> create(@RequestBody @Valid UserCreateRequestDTO dto) {
