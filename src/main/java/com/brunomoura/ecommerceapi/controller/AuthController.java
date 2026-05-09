@@ -4,6 +4,7 @@ import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
+import com.brunomoura.ecommerceapi.security.handler.CustomAuthenticationEntryPoint;
 import com.brunomoura.ecommerceapi.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,7 +46,7 @@ public class AuthController {
                     description = "Invalid email or password",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
+                            schema = @Schema(implementation = CustomAuthenticationEntryPoint.class)
                     ))
     })
     @PostMapping("/login")
