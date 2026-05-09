@@ -4,11 +4,11 @@ import com.brunomoura.ecommerceapi.dto.auth.LoginRequestDTO;
 import com.brunomoura.ecommerceapi.dto.auth.LoginResponseDTO;
 import com.brunomoura.ecommerceapi.dto.user.UserCreateRequestDTO;
 import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
-import com.brunomoura.ecommerceapi.security.handler.CustomAuthenticationEntryPoint;
 import com.brunomoura.ecommerceapi.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -38,16 +38,34 @@ public class AuthController {
                     description = "Authentication successful",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponseDTO.class)
-                    )),
+                            schema = @Schema(implementation = LoginResponseDTO.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkB0ZXN0LmNvbSIswiZXhwIjoxNzQ2ODAzNjAwfQ.dGhpcy1pcy1hLWZha2UtZXhhbXBsZS10b2tlbg",
+                                                "expiresAt": "2026-05-10T22:13:54.915Z",
+                                                "type": "Bearer"
+                                            }
+                                            """))),
 
             @ApiResponse(
                     responseCode = "401",
                     description = "Invalid email or password",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = CustomAuthenticationEntryPoint.class)
-                    ))
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 401,
+                                        "error": "UNAUTHORIZED",
+                                        "code": "INVALID_CREDENTIALS",
+                                        "message": "Invalid email or password",
+                                        "path": "/auth/login",
+                                        "errors": {}
+                                    }
+                                    """)))
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO dto) {
@@ -64,16 +82,34 @@ public class AuthController {
                     description = "User registered successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponseDTO.class)
-                    )),
+                            schema = @Schema(implementation = LoginResponseDTO.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkB0ZXN0LmNvbSIswiZXhwIjoxNzQ2ODAzNjAwfQ.dGhpcy1pcy1hLWZha2UtZXhhbXBsZS10b2tlbg",
+                                                "expiresAt": "2026-05-10T22:13:54.915Z",
+                                                "type": "Bearer"
+                                            }
+                                            """))),
 
             @ApiResponse(
                     responseCode = "400",
                     description = "Validation error, duplicated email or duplicated CPF",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )),
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 400,
+                                        "error": "BAD_REQUEST",
+                                        "code": "EMAIL_ALREADY_EXISTS",
+                                        "message": "Email already exists",
+                                        "path": "/auth/register",
+                                        "errors": {}
+                                    }
+                                    """)))
     })
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody @Valid UserCreateRequestDTO dto) {
