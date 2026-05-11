@@ -5,6 +5,8 @@ import com.brunomoura.ecommerceapi.service.UserService;
 import com.brunomoura.ecommerceapi.exception.model.ErrorResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -203,6 +205,10 @@ public class UserController {
     }
 
     @Operation(summary = "Search users with filters and pagination")
+    @Parameters({
+            @Parameter(name = "page", description = "Page number", example = "0"),
+            @Parameter(name = "size", description = "Page size", example = "10")
+    })
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
@@ -264,7 +270,9 @@ public class UserController {
                                             """)))
     })
     @GetMapping("/search")
-    public ResponseEntity<Page<UserSummaryResponseDTO>> search(@ModelAttribute UserFilterDTO dto, Pageable pageable) {
+    public ResponseEntity<Page<UserSummaryResponseDTO>> search(@ModelAttribute UserFilterDTO dto,
+                                                               @Parameter(hidden = true)
+                                                               Pageable pageable) {
         Page<UserSummaryResponseDTO> response = userService.search(dto, pageable);
         return ResponseEntity.ok(response);
     }

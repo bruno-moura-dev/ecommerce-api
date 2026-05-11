@@ -1,6 +1,7 @@
 package com.brunomoura.ecommerceapi.service;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -189,12 +190,28 @@ public class UserService {
     public AddressResponseDTO addAddress(Long userId, AddressCreateDTO dto) {
         User user = getActiveUserOrThrow(userId);
 
-        Address address = user.addAddress(dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(),
-                dto.getNeighborhood(), dto.getCity(), dto.getState(), dto.getCountry(), dto.getZipCode());
+        Address address = user.addAddress(
+                dto.getLabel(),
+                dto.getStreetName(),
+                dto.getHouseNumber(),
+                dto.getNeighborhood(),
+                dto.getCity(),
+                dto.getState(),
+                dto.getCountry(),
+                dto.getZipCode());
 
-        logger.info("Address added successfully. userId={}", userId);
+        userRepository.saveAndFlush(user);
 
-        return userMapper.toAddressResponse(address);
+        Address persistedAddress = user.getAddresses()
+                .stream()
+                .max(Comparator.comparing(Address::getId))
+                .orElseThrow(
+                        () -> new IllegalStateException("Persisted address not found.")
+                );
+
+        logger.info("Address added successfully. userId={} addressId={}", userId, persistedAddress.getId());
+
+        return userMapper.toAddressResponse(persistedAddress);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
@@ -212,8 +229,14 @@ public class UserService {
         User user = getActiveUserOrThrow(userId);
 
         AddressUpdate addressUpdate = new AddressUpdate(
-                dto.getLabel(), dto.getStreetName(), dto.getHouseNumber(), dto.getNeighborhood(), dto.getCity(),
-                dto.getState(), dto.getCountry(), dto.getZipCode()
+                dto.getLabel(),
+                dto.getStreetName(),
+                dto.getHouseNumber(),
+                dto.getNeighborhood(),
+                dto.getCity(),
+                dto.getState(),
+                dto.getCountry(),
+                dto.getZipCode()
         );
 
         Address address = user.updateAddress(addressId, addressUpdate);
@@ -278,13 +301,23 @@ public class UserService {
     private UserCreateResponseDTO buildCreateUserMethod(UserCreateRequestDTO dto) {
         validateUserUniquenessOrThrow(dto);
 
-        User user = new User(dto.getName(), dto.getEmail(),
-                dto.getCpf(), dto.getPhoneNumber(),
-                dto.getDateOfBirth(), passwordEncoder.encode(dto.getPassword()));
+        User user = new User(
+                dto.getName(),
+                dto.getEmail(),
+                dto.getCpf(),
+                dto.getPhoneNumber(),
+                dto.getDateOfBirth(),
+                passwordEncoder.encode(dto.getPassword()));
 
-        dto.getAddresses().forEach(address -> user.addAddress(address.getLabel(),
-                address.getStreetName(), address.getHouseNumber(),
-                address.getNeighborhood(), address.getCity(), address.getState(), address.getCountry(), address.getZipCode()));
+        dto.getAddresses().forEach(address -> user.addAddress(
+                address.getLabel(),
+                address.getStreetName(),
+                address.getHouseNumber(),
+                address.getNeighborhood(),
+                address.getCity(),
+                address.getState(),
+                address.getCountry(),
+                address.getZipCode()));
 
         User userSaved = userRepository.save(user);
 
