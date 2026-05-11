@@ -38,8 +38,15 @@ public class AuthController {
                     description = "Authentication successful",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponseDTO.class)
-                    )),
+                            schema = @Schema(implementation = LoginResponseDTO.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "token": "eyJhbGciOiJIUzI1NiJ9.fake-jwt-token.example",
+                                                "expiresAt": "2026-05-10T22:13:54.915Z",
+                                                "type": "Bearer"
+                                            }
+                                            """))),
 
             @ApiResponse(
                     responseCode = "401",
@@ -75,16 +82,34 @@ public class AuthController {
                     description = "User registered successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponseDTO.class)
-                    )),
+                            schema = @Schema(implementation = LoginResponseDTO.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "token": "eyJhbGciOiJIUzI1NiJ9.fake-jwt-token.example",
+                                                "expiresAt": "2026-05-10T22:13:54.915Z",
+                                                "type": "Bearer"
+                                            }
+                                            """))),
 
             @ApiResponse(
                     responseCode = "400",
                     description = "Validation error, duplicated email or duplicated CPF",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )),
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                        "timestamp": "2026-05-09T14:00:00Z",
+                                        "status": 400,
+                                        "error": "BAD_REQUEST",
+                                        "code": "EMAIL_ALREADY_EXISTS",
+                                        "message": "Email already exists",
+                                        "path": "/auth/register",
+                                        "errors": {}
+                                    }
+                                    """)))
     })
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody @Valid UserCreateRequestDTO dto) {

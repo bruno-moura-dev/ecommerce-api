@@ -16,7 +16,7 @@ public class LoginResponseDTO {
     public LoginResponseDTO(String token, Instant expiresAt) {
         this.token = token;
         this.expiresAt = expiresAt;
-        this.type = "Bearer ";
+        this.type = "Bearer";
     }
 
 }
