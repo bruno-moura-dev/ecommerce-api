@@ -58,7 +58,7 @@ public class AuthController {
                                     .content(createRequestJason))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.token").isNotEmpty())
-                    .andExpect(jsonPath("$.type").value("Bearer "))
+                    .andExpect(jsonPath("$.type").value("Bearer"))
                     .andExpect(jsonPath("$.expiresAt").isNotEmpty());
 
             Optional<User> user = userRepository.findByEmail(dto.getEmail());
@@ -187,7 +187,7 @@ public class AuthController {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.token").isNotEmpty())
                     .andExpect(jsonPath("$.expiresAt").isNotEmpty())
-                    .andExpect(jsonPath("$.type").value("Bearer "));
+                    .andExpect(jsonPath("$.type").value("Bearer"));
         }
 
         @Test

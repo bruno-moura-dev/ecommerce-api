@@ -104,7 +104,7 @@ public class AuthServiceTest {
 
             assertEquals("test-jwt-token", response.getToken());
             assertTrue(response.getExpiresAt().isAfter(Instant.now()));
-            assertEquals("Bearer ", response.getType());
+            assertEquals("Bearer", response.getType());
 
             verify(authenticationManager).authenticate(auth);
             verify(jwtService).generateToken(userDetails);
@@ -174,7 +174,7 @@ public class AuthServiceTest {
 
             assertEquals("test-jwt-token", response.getToken());
             assertTrue(response.getExpiresAt().isAfter(Instant.now()));
-            assertEquals("Bearer ", response.getType());
+            assertEquals("Bearer", response.getType());
 
             verify(userService).register(request);
             verify(customUserDetailsService).loadUserByUsername(request.getEmail());

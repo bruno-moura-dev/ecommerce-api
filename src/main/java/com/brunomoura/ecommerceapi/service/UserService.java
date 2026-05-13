@@ -202,16 +202,9 @@ public class UserService {
 
         userRepository.saveAndFlush(user);
 
-        Address persistedAddress = user.getAddresses()
-                .stream()
-                .max(Comparator.comparing(Address::getId))
-                .orElseThrow(
-                        () -> new IllegalStateException("Persisted address not found.")
-                );
+        logger.info("Address added successfully. userId={}", userId);
 
-        logger.info("Address added successfully. userId={} addressId={}", userId, persistedAddress.getId());
-
-        return userMapper.toAddressResponse(persistedAddress);
+        return userMapper.toAddressResponse(address);
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
